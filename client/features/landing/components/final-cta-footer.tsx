@@ -12,7 +12,7 @@ export function FinalCtaFooter({ isAuthenticated = false }: FinalCtaFooterProps)
   const targetHref = isAuthenticated ? authRoutes.dashboard : authRoutes.login;
 
   return (
-    <footer className="w-full bg-[#F7F4EE] border-t border-neutral-900/10 pt-16 pb-12 px-6">
+    <footer className="w-full bg-transparent border-t border-neutral-900/10 pt-16 pb-12 px-6">
       <div className="max-w-6xl mx-auto">
         {/* Final CTA Card (Browser Frame Box) */}
         <div className="relative bg-[#FFFFFF] border-2 border-neutral-900 rounded-[24px] shadow-[4px_4px_0px_0px_#121212] p-8 sm:p-12 lg:p-14 text-center overflow-hidden mb-16">

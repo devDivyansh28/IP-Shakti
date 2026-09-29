@@ -31,7 +31,7 @@ const STAGES = [
 
 export function HowItWorksFlow() {
   return (
-    <section id="how-it-works" className="w-full py-16 px-6 relative overflow-hidden bg-[#FAF8F5]">
+    <section id="how-it-works" className="w-full py-16 px-6 relative overflow-hidden bg-transparent">
       <div className="max-w-6xl mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Column: Context & Summary */}

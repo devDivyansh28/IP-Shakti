@@ -25,7 +25,7 @@ const TRUST_POINTS = [
 
 export function ConfidentialityStrip() {
   return (
-    <section className="w-full py-16 px-6 relative overflow-hidden bg-[#F7F4EE]">
+    <section className="w-full py-16 px-6 relative overflow-hidden bg-transparent">
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-12">

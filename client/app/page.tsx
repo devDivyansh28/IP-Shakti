@@ -17,7 +17,7 @@ export default async function HomePage() {
   const isAuthenticated = !!session;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F7F4EE] text-neutral-900 selection:bg-lime-300 selection:text-neutral-900">
+    <div className="min-h-screen flex flex-col bg-[#F6F2EE] bg-[url('/images/background_mat.svg')] bg-repeat text-neutral-900 selection:bg-lime-300 selection:text-neutral-900 font-sans">
       {/* 1. Sticky Navigation Header */}
       <LandingNavbar isAuthenticated={isAuthenticated} />
 

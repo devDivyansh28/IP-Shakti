@@ -106,7 +106,7 @@ export function AudienceSwitcher() {
   const activeContent = AUDIENCE_DATA.find((item) => item.id === activeTabId) ?? AUDIENCE_DATA[0];
 
   return (
-    <section className="w-full py-16 px-6 relative overflow-hidden bg-[#FAF8F5]">
+    <section className="w-full py-16 px-6 relative overflow-hidden bg-transparent">
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Section Header */}
         <div className="flex flex-col items-start mb-10">

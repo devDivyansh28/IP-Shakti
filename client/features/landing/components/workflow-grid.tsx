@@ -55,7 +55,7 @@ const WORKFLOWS = [
 
 export function WorkflowGrid() {
   return (
-    <section id="workflows" className="w-full py-16 px-6 relative overflow-hidden bg-[#F7F4EE]">
+    <section id="workflows" className="w-full py-16 px-6 relative overflow-hidden bg-transparent">
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Section Header */}
         <div className="flex flex-col items-start mb-12">

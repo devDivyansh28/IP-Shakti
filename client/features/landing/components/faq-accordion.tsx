@@ -45,7 +45,7 @@ export function FaqAccordion() {
   };
 
   return (
-    <section id="faq" className="w-full py-16 px-6 relative overflow-hidden bg-[#FAF8F5]">
+    <section id="faq" className="w-full py-16 px-6 relative overflow-hidden bg-transparent">
       <div className="max-w-4xl mx-auto relative z-10">
         {/* Header */}
         <div className="flex flex-col items-center text-center mb-12">
