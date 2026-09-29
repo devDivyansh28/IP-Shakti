@@ -102,7 +102,7 @@ export function DashboardHome({ userName }: DashboardHomeProps) {
     const greeting = userName?.split(" ")[0] ?? "there";
 
     return (
-        <div className="min-h-svh bg-[#F6F2EE] dark:bg-[#0B0F12] bg-[url('/images/background_mat.svg')] bg-repeat text-neutral-900 dark:text-[#FBF9F5]">
+        <div className="min-h-svh bg-[#FAF8F5] dark:bg-[#0B0F12] text-neutral-900 dark:text-[#FBF9F5]">
             <header className="sticky top-0 z-20 border-b border-neutral-900/10 dark:border-white/10 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/80 backdrop-blur-md">
                 <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-8">
                     <Link

@@ -19,7 +19,7 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     }
 
     return (
-        <div className="flex h-screen w-full bg-[#F6F2EE] dark:bg-[#0B0F12] bg-[url('/images/background_mat.svg')] bg-repeat text-neutral-900 dark:text-[#FBF9F5] overflow-hidden">
+        <div className="flex h-screen w-full bg-[#FAF8F5] dark:bg-[#0B0F12] text-neutral-900 dark:text-[#FBF9F5] overflow-hidden">
             <Suspense fallback={null}>
                 <WorkspaceChat
                     workspaceId={workspace.id}
