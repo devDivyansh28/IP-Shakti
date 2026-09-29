@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Streamdown } from "streamdown";
 import { code } from "@streamdown/code";
+import { Sparkles } from "lucide-react";
 import { getCitationByIndex } from "../lib/citations";
 import type { ChatCitation } from "../lib/types";
 import { CitationMarker } from "./citation-marker";
@@ -26,6 +27,21 @@ export function ChatMessageBody({
     workspaceId,
     isAnimating = false,
 }: ChatMessageBodyProps) {
+    const [thinkingPhase, setThinkingPhase] = useState(0);
+
+    // Multi-stage status messages while backend vector search and reasoning run
+    useEffect(() => {
+        if (!isAnimating || text.trim().length > 0) return;
+
+        const timer1 = setTimeout(() => setThinkingPhase(1), 1200);
+        const timer2 = setTimeout(() => setThinkingPhase(2), 2600);
+
+        return () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+        };
+    }, [isAnimating, text]);
+
     const markdown = useMemo(() => injectCitationTags(text), [text]);
     const plugins = useMemo(() => ({ code }), []);
 
@@ -87,6 +103,33 @@ export function ChatMessageBody({
         }),
         [citations, workspaceId],
     );
+
+    // Instant Responsive Thinking Shimmer while awaiting backend tokens
+    if (!text.trim() && isAnimating) {
+        const statusMessages = [
+            "Querying TKDL Prior Art & AYUSH Gazette database...",
+            "Cross-referencing Patents Act § 3(p) & Biodiversity rules...",
+            "Synthesizing statutory diagnostic assessment...",
+        ];
+
+        return (
+            <div className="flex flex-col gap-3 py-1 min-w-[280px]">
+                <div className="flex items-center gap-2.5 text-xs font-mono font-medium text-neutral-700 dark:text-[#D4F843]">
+                    <div className="relative flex size-2.5 items-center justify-center">
+                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-lime-400 opacity-75" />
+                        <span className="relative inline-flex size-2 rounded-full bg-lime-500" />
+                    </div>
+                    <span className="animate-pulse">
+                        {statusMessages[thinkingPhase] ?? statusMessages[0]}
+                    </span>
+                </div>
+                <div className="space-y-2 w-full">
+                    <div className="h-3 w-4/5 rounded-md bg-neutral-200/80 dark:bg-white/[0.08] animate-pulse" />
+                    <div className="h-3 w-3/5 rounded-md bg-neutral-200/60 dark:bg-white/[0.05] animate-pulse" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <Streamdown

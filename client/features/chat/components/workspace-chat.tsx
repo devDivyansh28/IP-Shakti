@@ -76,6 +76,7 @@ export function WorkspaceChat({
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [conversationId, setConversationId] = useState<string | null>(null);
+    const [isOptimisticActive, setIsOptimisticActive] = useState(false);
     const [citationsByMessageId, setCitationsByMessageId] = useState<
         Record<string, ChatCitation[]>
     >({});
@@ -158,6 +159,7 @@ export function WorkspaceChat({
         if (!conversationId) {
             setMessages([]);
             setCitationsByMessageId({});
+            setIsOptimisticActive(false);
             return;
         }
 
@@ -180,6 +182,7 @@ export function WorkspaceChat({
             return;
         }
 
+        setIsOptimisticActive(false);
         void queryClient.invalidateQueries({
             queryKey: chatKeys(workspaceId).messages(conversationId),
         });
@@ -205,6 +208,7 @@ export function WorkspaceChat({
         }
 
         handledAskPrompt.current = askPrompt;
+        setIsOptimisticActive(true);
         void sendMessage({ text: askPrompt });
         router.replace(workspaceRoutes.detail(workspaceId));
     }, [
@@ -221,6 +225,7 @@ export function WorkspaceChat({
         setConversationId(null);
         setMessages([]);
         setCitationsByMessageId({});
+        setIsOptimisticActive(false);
     }
 
     async function handleDeleteActiveConversation() {
@@ -248,8 +253,18 @@ export function WorkspaceChat({
         if (jur) {
             setJurisdiction(workspaceId, jur);
         }
+        // Immediately transition view with zero delay
+        setIsOptimisticActive(true);
         void sendMessage({ text });
     }
+
+    // Whether to display welcome hero screen
+    const showWelcome =
+        messages.length === 0 &&
+        !isOptimisticActive &&
+        !isStreaming &&
+        !conversationsLoading &&
+        !messagesLoading;
 
     return (
         <div className="flex h-screen w-full bg-[#FAF8F5] dark:bg-[#0B0F12] text-neutral-900 dark:text-[#FBF9F5] overflow-hidden font-sans">
@@ -267,7 +282,6 @@ export function WorkspaceChat({
 
             {/* 2. Main Workspace Canvas */}
             <div className="flex-1 flex flex-col h-full min-w-0 bg-[#FAF8F5] dark:bg-[#0B0F12] relative overflow-hidden">
-
                 {/* Top Control Bar */}
                 <div className="h-14 border-b-2 border-neutral-900/10 dark:border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/60 backdrop-blur-md z-10">
                     <div className="flex items-center gap-3 min-w-0">
@@ -327,9 +341,7 @@ export function WorkspaceChat({
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-h-0 relative z-10">
-                    {messages.length === 0 &&
-                    !conversationsLoading &&
-                    !messagesLoading ? (
+                    {showWelcome ? (
                         <TailgridsWelcome
                             workspaceId={workspaceId}
                             onSendMessage={handleDispatchMessage}
@@ -448,6 +460,40 @@ export function WorkspaceChat({
                                                             );
                                                         },
                                                     )}
+
+                                                    {/* Instant Assistant Thinking Shimmer when user has submitted and assistant chunk hasn't arrived */}
+                                                    {isStreaming &&
+                                                        messages.length > 0 &&
+                                                        messages[
+                                                            messages.length - 1
+                                                        ]?.role === "user" && (
+                                                            <MessageScrollerItem scrollAnchor>
+                                                                <Message align="start">
+                                                                    <MessageAvatar className="size-8 rounded-lg bg-lime-300 border-2 border-neutral-900 flex items-center justify-center text-neutral-900 font-bold shadow-sm">
+                                                                        <ShieldCheck className="size-4 text-neutral-900" />
+                                                                    </MessageAvatar>
+                                                                    <MessageContent>
+                                                                        <Bubble
+                                                                            align="start"
+                                                                            variant="ghost"
+                                                                            className="bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border-2 border-neutral-900 dark:border-white/20 shadow-[3px_3px_0px_0px_#121212] dark:shadow-none rounded-2xl"
+                                                                        >
+                                                                            <BubbleContent className="leading-relaxed p-4">
+                                                                                <ChatMessageBody
+                                                                                    text=""
+                                                                                    workspaceId={
+                                                                                        workspaceId
+                                                                                    }
+                                                                                    isAnimating={
+                                                                                        true
+                                                                                    }
+                                                                                />
+                                                                            </BubbleContent>
+                                                                        </Bubble>
+                                                                    </MessageContent>
+                                                                </Message>
+                                                            </MessageScrollerItem>
+                                                        )}
                                                 </MessageGroup>
                                             )}
                                         </MessageScrollerContent>
