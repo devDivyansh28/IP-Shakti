@@ -252,7 +252,7 @@ export function WorkspaceChat({
     }
 
     return (
-        <div className="flex h-screen w-full bg-[#FAF8F5] dark:bg-[#0B0F12] text-neutral-900 dark:text-[#FBF9F5] overflow-hidden font-sans">
+        <div className="flex h-screen w-full bg-[#F6F2EE] dark:bg-[#0B0F12] bg-[url('/images/background_mat.svg')] bg-repeat text-neutral-900 dark:text-[#FBF9F5] overflow-hidden font-sans">
             {/* 1. Left Sidebar */}
             <TailgridsSidebar
                 workspaceId={workspaceId}
@@ -266,15 +266,7 @@ export function WorkspaceChat({
             />
 
             {/* 2. Main Workspace Canvas */}
-            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#FAF8F5] dark:bg-[#0B0F12] relative overflow-hidden">
-                {/* Background Texture from Landing Page */}
-                <div
-                    className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.03] z-0 select-none"
-                    style={{
-                        backgroundImage: "url('/images/background_mat.svg')",
-                        backgroundRepeat: "repeat",
-                    }}
-                />
+            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#F6F2EE] dark:bg-[#0B0F12] bg-[url('/images/background_mat.svg')] bg-repeat relative overflow-hidden">
 
                 {/* Top Control Bar */}
                 <div className="h-14 border-b-2 border-neutral-900/10 dark:border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/60 backdrop-blur-md z-10">

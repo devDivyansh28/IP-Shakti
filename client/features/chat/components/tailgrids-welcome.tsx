@@ -69,12 +69,6 @@ export function TailgridsWelcome({
 
     return (
         <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-4xl mx-auto w-full text-center relative z-10 font-sans">
-            {/* Top Category Badge (Landing Page Pattern) */}
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 text-lime-300 border border-neutral-900 text-xs font-mono font-medium tracking-wide uppercase mb-4 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Statutory Diagnostic Assistant</span>
-            </div>
-
             {/* 1. Centered Greeting (Landing Page Figtree Typography) */}
             <div className="space-y-3 mb-8">
                 <h1 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-tight text-neutral-900 dark:text-[#FBF9F5]">

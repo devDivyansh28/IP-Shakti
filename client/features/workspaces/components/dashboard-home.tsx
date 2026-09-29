@@ -102,17 +102,17 @@ export function DashboardHome({ userName }: DashboardHomeProps) {
     const greeting = userName?.split(" ")[0] ?? "there";
 
     return (
-        <div className="min-h-svh bg-muted/30">
-            <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur-md">
+        <div className="min-h-svh bg-[#F6F2EE] dark:bg-[#0B0F12] bg-[url('/images/background_mat.svg')] bg-repeat text-neutral-900 dark:text-[#FBF9F5]">
+            <header className="sticky top-0 z-20 border-b border-neutral-900/10 dark:border-white/10 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/80 backdrop-blur-md">
                 <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-4 px-4 md:px-8">
                     <Link
                         href={workspaceRoutes.list}
-                        className="flex items-center gap-2.5 font-heading text-lg font-semibold tracking-tight"
+                        className="flex items-center gap-2.5 font-heading text-lg font-bold tracking-tight text-neutral-900 dark:text-[#FBF9F5]"
                     >
-                        <span className="flex size-8 items-center justify-center rounded-xl bg-primary/15 text-base">
-                            📚
-                        </span>
-                        Chaibook
+                        <div className="size-7 rounded-md bg-lime-300 border border-neutral-900 flex items-center justify-center shadow-sm">
+                            <SparklesIcon className="size-4 text-neutral-900" />
+                        </div>
+                        <span>IP-SAKTI Sahayak</span>
                     </Link>
 
                     <div className="flex items-center gap-1.5 sm:gap-2">
