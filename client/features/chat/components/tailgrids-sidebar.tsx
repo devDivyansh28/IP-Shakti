@@ -23,7 +23,6 @@ import { useUserProfile } from "@/features/auth/hooks/use-user-profile";
 import { workspaceRoutes } from "@/features/workspaces/lib/routes";
 import { CreateProjectModal } from "@/features/workspaces/components/create-project-modal";
 import { SettingsDialog } from "./settings-dialog";
-import { ModeToggle } from "@/components/ui/mode-toggle";
 import type { Conversation } from "../lib/types";
 
 type TailgridsSidebarProps = {
@@ -133,10 +132,7 @@ export function TailgridsSidebar({
                                 </span>
                             </Link>
 
-                            <div className="flex items-center gap-1">
-                                {/* Theme Toggle Button */}
-                                <ModeToggle />
-
+                            <div>
                                 <button
                                     type="button"
                                     onClick={onToggleCollapse}
