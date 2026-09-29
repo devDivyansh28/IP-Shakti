@@ -1,8 +1,19 @@
+import { redirect } from "next/navigation";
 import { requireAuth } from "@/features/auth";
-import { DashboardHome } from "@/features/workspaces/components/dashboard-home";
+import {
+    listWorkspacesServer,
+    createDefaultWorkspaceServer,
+} from "@/features/workspaces/lib/workspace-server";
+import { workspaceRoutes } from "@/features/workspaces/lib/routes";
 
 export default async function DashboardPage() {
-    const session = await requireAuth();
+    await requireAuth();
 
-    return <DashboardHome userName={session.user.name} />;
+    const workspaces = await listWorkspacesServer();
+    if (workspaces.length > 0) {
+        redirect(workspaceRoutes.detail(workspaces[0].id));
+    }
+
+    const defaultWorkspace = await createDefaultWorkspaceServer();
+    redirect(workspaceRoutes.detail(defaultWorkspace.id));
 }

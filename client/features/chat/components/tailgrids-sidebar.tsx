@@ -151,9 +151,11 @@ export function TailgridsSidebar({
                     <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-white/10 flex flex-col">
                         {/* 1. Header: Brand + Theme Toggle + Collapse Button */}
                         <div className="flex items-center justify-between px-4 py-4 border-b border-neutral-900/10 dark:border-white/[0.06]">
-                            <Link
-                                href="/dashboard"
-                                className="flex items-center gap-2 group"
+                            <button
+                                type="button"
+                                onClick={onNewChat}
+                                title="IP-SAKTI AI Workspace"
+                                className="flex items-center gap-2 group cursor-pointer text-left"
                             >
                                 <div className="size-7 rounded-md bg-lime-300 border border-neutral-900 flex items-center justify-center shadow-sm">
                                     <Sparkles className="size-4 text-neutral-900 group-hover:rotate-12 transition-transform" />
@@ -161,7 +163,7 @@ export function TailgridsSidebar({
                                 <span className="font-heading font-extrabold text-base tracking-tight text-neutral-900 dark:text-[#FBF9F5]">
                                     IP-SAKTI
                                 </span>
-                            </Link>
+                            </button>
 
                             <div>
                                 <button
