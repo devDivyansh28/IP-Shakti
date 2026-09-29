@@ -71,6 +71,8 @@ export function WorkspaceChat({
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [conversationId, setConversationId] = useState<string | null>(null);
     const [isOptimisticActive, setIsOptimisticActive] = useState(false);
+    const [optimisticUserText, setOptimisticUserText] = useState<string | null>(null);
+    const [isOptimisticGenerating, setIsOptimisticGenerating] = useState(false);
     const [citationsByMessageId, setCitationsByMessageId] = useState<
         Record<string, ChatCitation[]>
     >({});
@@ -150,6 +152,29 @@ export function WorkspaceChat({
 
     const isStreaming = status === "streaming" || status === "submitted";
 
+    const lastMessage = messages[messages.length - 1];
+    const hasAssistantChunk =
+        lastMessage?.role === "assistant" &&
+        getMessageText(lastMessage).trim().length > 0;
+
+    // Clear optimistic user text once the message appears in the live stream or query
+    useEffect(() => {
+        if (!optimisticUserText) return;
+        const exists = messages.some(
+            (m) => m.role === "user" && getMessageText(m) === optimisticUserText,
+        );
+        if (exists) {
+            setOptimisticUserText(null);
+        }
+    }, [messages, optimisticUserText]);
+
+    // Turn off optimistic generating once live assistant tokens start arriving
+    useEffect(() => {
+        if (hasAssistantChunk || status === "ready") {
+            setIsOptimisticGenerating(false);
+        }
+    }, [hasAssistantChunk, status]);
+
     useEffect(() => {
         if (!conversationId) {
             setMessages([]);
@@ -220,6 +245,8 @@ export function WorkspaceChat({
         setConversationId(null);
         setMessages([]);
         setCitationsByMessageId({});
+        setOptimisticUserText(null);
+        setIsOptimisticGenerating(false);
         setIsOptimisticActive(false);
     }
 
@@ -248,7 +275,9 @@ export function WorkspaceChat({
         if (jur) {
             setJurisdiction(workspaceId, jur);
         }
-        // Immediately transition view with zero delay
+        // Immediately paint user bubble and diagnostic thinking skeleton in 0ms
+        setOptimisticUserText(text);
+        setIsOptimisticGenerating(true);
         setIsOptimisticActive(true);
         void sendMessage({ text });
     }
@@ -256,6 +285,7 @@ export function WorkspaceChat({
     // Whether to display welcome hero screen
     const showWelcome =
         messages.length === 0 &&
+        !optimisticUserText &&
         !isOptimisticActive &&
         !isStreaming &&
         !conversationsLoading &&
@@ -448,12 +478,24 @@ export function WorkspaceChat({
                                                         },
                                                     )}
 
-                                                    {/* Instant Assistant Thinking Shimmer when user has submitted and assistant chunk hasn't arrived */}
-                                                    {isStreaming &&
-                                                        messages.length > 0 &&
-                                                        messages[
-                                                            messages.length - 1
-                                                        ]?.role === "user" && (
+                                                    {/* Optimistic User Bubble (Renders instantaneously in 0ms) */}
+                                                    {optimisticUserText && (
+                                                        <MessageScrollerItem scrollAnchor>
+                                                            <div className="flex w-full justify-end">
+                                                                <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-tr-sm bg-neutral-900 text-white dark:bg-[#1D232A] dark:text-[#FBF9F5] border border-neutral-900 dark:border-white/10 px-4 py-3 text-sm leading-relaxed shadow-sm font-sans">
+                                                                    {optimisticUserText}
+                                                                </div>
+                                                            </div>
+                                                        </MessageScrollerItem>
+                                                    )}
+
+                                                    {/* Instant Assistant Statutory Diagnostic Pipeline & Shimmer Skeleton */}
+                                                    {(isOptimisticGenerating ||
+                                                        isStreaming ||
+                                                        Boolean(
+                                                            optimisticUserText,
+                                                        )) &&
+                                                        !hasAssistantChunk && (
                                                             <MessageScrollerItem scrollAnchor>
                                                                 <div className="flex w-full items-start gap-3">
                                                                     <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 dark:border-white/20 flex items-center justify-center shrink-0 mt-0.5 text-neutral-900 font-bold shadow-sm">
