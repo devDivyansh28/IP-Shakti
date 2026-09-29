@@ -69,127 +69,129 @@ export function SettingsDialog({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-[#FAF8F5] dark:bg-[#161B20] border-2 border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#FBF9F5] sm:max-w-md p-6 rounded-[24px] shadow-[4px_4px_0px_0px_#121212] dark:shadow-none">
-                <DialogHeader className="space-y-1 text-left">
-                    <DialogTitle className="text-lg font-heading font-extrabold tracking-tight text-neutral-900 dark:text-[#FBF9F5] flex items-center gap-2">
-                        <div className="size-6 rounded-md bg-lime-300 border border-neutral-900 flex items-center justify-center">
-                            <Sparkles className="size-3.5 text-neutral-900" />
-                        </div>
-                        <span>Account & Workspace Settings</span>
-                    </DialogTitle>
-                    <DialogDescription className="text-xs text-neutral-600 dark:text-[#9EA8B3]">
-                        Manage your researcher profile and app appearance.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div className="space-y-4 py-2">
-                    {/* User Profile Card */}
-                    <div className="p-3.5 rounded-xl bg-white dark:bg-[#1D232A] border-2 border-neutral-900 dark:border-white/[0.08] flex items-center justify-between shadow-[2px_2px_0px_0px_#121212] dark:shadow-none">
-                        <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-full bg-lime-300 border border-neutral-900 flex items-center justify-center text-sm font-bold text-neutral-900">
-                                {userProfile?.name
-                                    ?.split(" ")
-                                    .map((n) => n[0])
-                                    .slice(0, 2)
-                                    .join("")
-                                    .toUpperCase() ?? "U"}
+        <>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="bg-[#FAF8F5] dark:bg-[#161B20] border-2 border-neutral-900 dark:border-white/20 text-neutral-900 dark:text-[#FBF9F5] w-full sm:max-w-lg p-5 sm:p-6 rounded-[24px] shadow-[4px_4px_0px_0px_#121212] dark:shadow-none overflow-hidden">
+                    <DialogHeader className="space-y-1 text-left">
+                        <DialogTitle className="text-lg font-heading font-extrabold tracking-tight text-neutral-900 dark:text-[#FBF9F5] flex items-center gap-2">
+                            <div className="size-6 rounded-md bg-lime-300 border border-neutral-900 flex items-center justify-center shrink-0">
+                                <Sparkles className="size-3.5 text-neutral-900" />
                             </div>
-                            <div>
-                                <p className="text-sm font-bold text-neutral-900 dark:text-[#FBF9F5]">
-                                    {userProfile?.name ?? "Researcher"}
-                                </p>
-                                <p className="text-xs text-neutral-600 dark:text-[#9EA8B3]">
-                                    {userProfile?.email ?? "user@ipsakti.in"}
-                                </p>
-                            </div>
-                        </div>
+                            <span className="truncate">Account & Workspace Settings</span>
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-neutral-600 dark:text-[#9EA8B3]">
+                            Manage your researcher profile and app appearance.
+                        </DialogDescription>
+                    </DialogHeader>
 
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wide uppercase bg-lime-300 text-neutral-900 border border-neutral-900">
-                            {userProfile?.role === "ADMIN" ? "Admin" : "Scholar"}
-                        </span>
-                    </div>
-
-                    {/* Theme Mode Selector */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-mono font-bold text-neutral-600 dark:text-[#9EA8B3] uppercase tracking-wider block">
-                            Appearance Theme
-                        </label>
-                        <div className="grid grid-cols-3 gap-2">
-                            {[
-                                { id: "light", label: "Light", icon: Sun },
-                                { id: "dark", label: "Dark", icon: Moon },
-                                { id: "system", label: "System", icon: Laptop },
-                            ].map((t) => {
-                                const isSelected = theme === t.id;
-                                const IconComp = t.icon;
-                                return (
-                                    <button
-                                        key={t.id}
-                                        type="button"
-                                        onClick={() => setTheme(t.id)}
-                                        className={`flex items-center justify-center gap-2 p-2.5 rounded-xl border-2 transition-all ${
-                                            isSelected
-                                                ? "bg-neutral-900 text-lime-300 border-neutral-900 shadow-[2px_2px_0px_0px_#121212] font-bold"
-                                                : "bg-white dark:bg-[#111417] text-neutral-700 dark:text-[#9EA8B3] border-neutral-900/20 dark:border-white/10 hover:border-neutral-900/50"
-                                        }`}
-                                    >
-                                        <IconComp className="size-3.5" />
-                                        <span className="text-xs">{t.label}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Current Project Card & Danger Zone */}
-                    {currentWorkspace ? (
-                        <div className="space-y-2">
-                            <label className="text-xs font-mono font-bold text-neutral-600 dark:text-[#9EA8B3] uppercase tracking-wider block">
-                                Current Project
-                            </label>
-                            <div className="p-3.5 rounded-xl bg-white dark:bg-[#1D232A] border-2 border-neutral-900 dark:border-white/[0.08] flex items-center justify-between shadow-[2px_2px_0px_0px_#121212] dark:shadow-none">
-                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
-                                    <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 flex items-center justify-center shrink-0">
-                                        <Folder className="size-4 text-neutral-900" />
-                                    </div>
-                                    <div className="min-w-0">
-                                        <p className="text-xs font-bold text-neutral-900 dark:text-[#FBF9F5] truncate">
-                                            {currentWorkspace.title}
-                                        </p>
-                                        <p className="text-[10px] text-neutral-500 dark:text-[#9EA8B3] truncate">
-                                            {currentWorkspace.description || "Active Ayurvedic IP Dossier"}
-                                        </p>
-                                    </div>
+                    <div className="space-y-4 py-2 w-full min-w-0 overflow-hidden">
+                        {/* User Profile Card */}
+                        <div className="p-3.5 rounded-xl bg-white dark:bg-[#1D232A] border-2 border-neutral-900 dark:border-white/[0.08] flex items-center justify-between gap-3 w-full min-w-0 shadow-[2px_2px_0px_0px_#121212] dark:shadow-none">
+                            <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
+                                <div className="size-10 rounded-full bg-lime-300 border border-neutral-900 flex items-center justify-center text-sm font-bold text-neutral-900 shrink-0">
+                                    {userProfile?.name
+                                        ?.split(" ")
+                                        .map((n) => n[0])
+                                        .slice(0, 2)
+                                        .join("")
+                                        .toUpperCase() ?? "U"}
                                 </div>
+                                <div className="min-w-0 flex-1 overflow-hidden">
+                                    <p className="text-sm font-bold text-neutral-900 dark:text-[#FBF9F5] truncate">
+                                        {userProfile?.name ?? "Researcher"}
+                                    </p>
+                                    <p className="text-xs text-neutral-600 dark:text-[#9EA8B3] truncate">
+                                        {userProfile?.email ?? "user@ipsakti.in"}
+                                    </p>
+                                </div>
+                            </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => setDeleteProjectOpen(true)}
-                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 text-xs font-bold transition-colors shrink-0"
-                                    title="Delete this project"
-                                >
-                                    <Trash2 className="size-3" />
-                                    <span>Delete</span>
-                                </button>
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold tracking-wide uppercase bg-lime-300 text-neutral-900 border border-neutral-900 shrink-0">
+                                {userProfile?.role === "ADMIN" ? "Admin" : "Scholar"}
+                            </span>
+                        </div>
+
+                        {/* Theme Mode Selector */}
+                        <div className="space-y-2 w-full min-w-0">
+                            <label className="text-xs font-mono font-bold text-neutral-600 dark:text-[#9EA8B3] uppercase tracking-wider block">
+                                Appearance Theme
+                            </label>
+                            <div className="grid grid-cols-3 gap-2 w-full">
+                                {[
+                                    { id: "light", label: "Light", icon: Sun },
+                                    { id: "dark", label: "Dark", icon: Moon },
+                                    { id: "system", label: "System", icon: Laptop },
+                                ].map((t) => {
+                                    const isSelected = theme === t.id;
+                                    const IconComp = t.icon;
+                                    return (
+                                        <button
+                                            key={t.id}
+                                            type="button"
+                                            onClick={() => setTheme(t.id)}
+                                            className={`flex items-center justify-center gap-1.5 p-2.5 rounded-xl border-2 transition-all w-full truncate ${
+                                                isSelected
+                                                    ? "bg-neutral-900 text-lime-300 border-neutral-900 shadow-[2px_2px_0px_0px_#121212] font-bold"
+                                                    : "bg-white dark:bg-[#111417] text-neutral-700 dark:text-[#9EA8B3] border-neutral-900/20 dark:border-white/10 hover:border-neutral-900/50"
+                                            }`}
+                                        >
+                                            <IconComp className="size-3.5 shrink-0" />
+                                            <span className="text-xs font-medium truncate">{t.label}</span>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </div>
-                    ) : null}
 
-                    {/* Sign Out Action */}
-                    <div className="pt-2 border-t border-neutral-900/10 dark:border-white/[0.06]">
-                        <button
-                            type="button"
-                            onClick={() => void handleSignOut()}
-                            disabled={isSigningOut}
-                            className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 text-xs font-bold transition-colors"
-                        >
-                            <LogOut className="size-3.5" />
-                            <span>{isSigningOut ? "Signing out..." : "Sign Out of IP-SAKTI"}</span>
-                        </button>
+                        {/* Current Project Card & Danger Zone */}
+                        {currentWorkspace ? (
+                            <div className="space-y-2 w-full min-w-0">
+                                <label className="text-xs font-mono font-bold text-neutral-600 dark:text-[#9EA8B3] uppercase tracking-wider block">
+                                    Current Project
+                                </label>
+                                <div className="p-3.5 rounded-xl bg-white dark:bg-[#1D232A] border-2 border-neutral-900 dark:border-white/[0.08] flex items-center justify-between gap-3 w-full min-w-0 shadow-[2px_2px_0px_0px_#121212] dark:shadow-none">
+                                    <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+                                        <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 flex items-center justify-center shrink-0">
+                                            <Folder className="size-4 text-neutral-900" />
+                                        </div>
+                                        <div className="min-w-0 flex-1 overflow-hidden">
+                                            <p className="text-xs font-bold text-neutral-900 dark:text-[#FBF9F5] truncate">
+                                                {currentWorkspace.title}
+                                            </p>
+                                            <p className="text-[11px] text-neutral-500 dark:text-[#9EA8B3] truncate">
+                                                {currentWorkspace.description || "Active Ayurvedic IP Dossier"}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setDeleteProjectOpen(true)}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 text-xs font-bold transition-colors shrink-0"
+                                        title="Delete this project"
+                                    >
+                                        <Trash2 className="size-3.5" />
+                                        <span>Delete</span>
+                                    </button>
+                                </div>
+                            </div>
+                        ) : null}
+
+                        {/* Sign Out Action */}
+                        <div className="pt-2 border-t border-neutral-900/10 dark:border-white/[0.06] w-full">
+                            <button
+                                type="button"
+                                onClick={() => void handleSignOut()}
+                                disabled={isSigningOut}
+                                className="w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 text-xs font-bold transition-colors"
+                            >
+                                <LogOut className="size-3.5" />
+                                <span>{isSigningOut ? "Signing out..." : "Sign Out of IP-SAKTI"}</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            </DialogContent>
+                </DialogContent>
+            </Dialog>
 
             <DeleteWorkspaceDialog
                 open={deleteProjectOpen}
@@ -198,6 +200,6 @@ export function SettingsDialog({
                 onConfirm={handleConfirmDeleteProject}
                 isPending={deleteWorkspaceMutation.isPending}
             />
-        </Dialog>
+        </>
     );
 }
