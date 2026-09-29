@@ -62,9 +62,9 @@ export function ChatComposer({
     }
 
     return (
-        <div className="border-t-2 border-neutral-900/10 dark:border-white/10 bg-[#FAF8F5]/90 dark:bg-[#0E1216]/90 backdrop-blur-md p-4">
+        <div className="border-t-2 border-neutral-900/10 dark:border-white/10 bg-[#FAF8F5]/90 dark:bg-[#0E1216]/90 backdrop-blur-md p-2.5 sm:p-4">
             <div className="mx-auto max-w-3xl">
-                <div className="w-full bg-white dark:bg-[#161B20] border-2 border-neutral-900 dark:border-white/20 rounded-2xl p-3 shadow-[3px_3px_0px_0px_#121212] dark:shadow-none transition-all text-left">
+                <div className="w-full bg-white dark:bg-[#161B20] border-2 border-neutral-900 dark:border-white/20 rounded-2xl p-2.5 sm:p-3 shadow-[3px_3px_0px_0px_#121212] dark:shadow-none transition-all text-left">
                     {/* Textarea */}
                     <textarea
                         value={input}
@@ -73,13 +73,13 @@ export function ChatComposer({
                         placeholder="Ask me anything..."
                         rows={1}
                         disabled={disabled || isStreaming}
-                        className="w-full bg-transparent text-neutral-900 dark:text-[#FBF9F5] placeholder-neutral-500 dark:placeholder-[#6C7684] text-sm resize-none focus:outline-none scrollbar-none font-sans min-h-[40px] max-h-32"
+                        className="w-full bg-transparent text-neutral-900 dark:text-[#FBF9F5] placeholder-neutral-500 dark:placeholder-[#6C7684] text-xs sm:text-sm resize-none focus:outline-none scrollbar-none font-sans min-h-[38px] max-h-32"
                     />
 
                     {/* Integrated Bottom Toolbar */}
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-neutral-900/10 dark:border-white/[0.08] mt-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5 sm:gap-2 pt-2 border-t border-neutral-900/10 dark:border-white/[0.08] mt-1">
                         {/* Left Controls: Attach + Web Search Pill + Jurisdiction */}
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                             <input
                                 ref={fileInputRef}
                                 type="file"
@@ -91,7 +91,7 @@ export function ChatComposer({
                                 title="Attach documents"
                                 className="p-1.5 rounded-lg text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] border border-neutral-900/10 dark:border-white/10 transition-colors"
                             >
-                                <Paperclip className="size-4" />
+                                <Paperclip className="size-3.5 sm:size-4" />
                             </button>
 
                             {/* Self-Explanatory Web Search Pill Button */}
@@ -103,7 +103,7 @@ export function ChatComposer({
                                         !isWebSearchActive,
                                     )
                                 }
-                                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                                className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium border transition-all ${
                                     isWebSearchActive
                                         ? "bg-lime-300 border-neutral-900 text-neutral-900 font-bold shadow-[2px_2px_0px_0px_#121212] dark:shadow-none"
                                         : "bg-white dark:bg-[#111417] text-neutral-700 dark:text-[#9EA8B3] border-neutral-900/20 dark:border-white/10 hover:border-neutral-900/50"
@@ -138,7 +138,7 @@ export function ChatComposer({
                                             onClick={() =>
                                                 handleJurisdictionClick(opt.id)
                                             }
-                                            className={`px-2 py-0.5 rounded text-[10px] transition-all ${
+                                            className={`px-1.5 sm:px-2 py-0.5 rounded text-[10px] transition-all ${
                                                 isActive
                                                     ? "bg-neutral-900 text-lime-300 dark:bg-[#28313B] dark:text-[#D4F843] font-bold shadow-sm"
                                                     : "text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5]"

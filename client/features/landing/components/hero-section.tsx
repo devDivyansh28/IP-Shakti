@@ -14,7 +14,7 @@ export function HeroSection({ isAuthenticated = false }: HeroSectionProps) {
   const targetHref = isAuthenticated ? authRoutes.dashboard : authRoutes.login;
 
   return (
-    <section className="relative w-full pt-8 pb-12 px-6 overflow-hidden">
+    <section className="relative w-full pt-4 sm:pt-8 pb-8 sm:pb-12 px-4 sm:px-6 overflow-hidden">
       {/* Background Architectural Guide Lines */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none z-0">
         <span className="absolute top-0 bottom-0 left-[12%] w-px bg-neutral-900/[0.07]" />
@@ -25,30 +25,30 @@ export function HeroSection({ isAuthenticated = false }: HeroSectionProps) {
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Main Hero Card with Folded Paper Corner Notch */}
-        <div className="relative bg-[#FAF8F5] border-2 border-neutral-900 rounded-[24px] shadow-[4px_4px_0px_0px_#121212] overflow-hidden">
+        <div className="relative bg-[#FAF8F5] border-2 border-neutral-900 rounded-[20px] sm:rounded-[24px] shadow-[4px_4px_0px_0px_#121212] overflow-hidden">
           {/* Folded Paper Corner Notch (Top-Right Dog-Ear) */}
-          <div className="absolute top-0 right-0 w-16 h-16 pointer-events-none z-20">
-            <div className="absolute top-0 right-0 w-0 h-0 border-t-[64px] border-t-[#F7F4EE] border-l-[64px] border-l-transparent drop-shadow-[-1px_1px_1px_rgba(0,0,0,0.15)]" />
-            <div className="absolute top-0 right-0 w-16 h-16 border-b border-l border-neutral-900/30" />
-            <div className="absolute top-2 right-2 w-3 h-3 rounded-[2px] bg-lime-300 border border-neutral-900" />
+          <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 pointer-events-none z-20">
+            <div className="absolute top-0 right-0 w-0 h-0 border-t-[48px] sm:border-t-[64px] border-t-[#F7F4EE] border-l-[48px] sm:border-l-[64px] border-l-transparent drop-shadow-[-1px_1px_1px_rgba(0,0,0,0.15)]" />
+            <div className="absolute top-0 right-0 w-12 sm:w-16 h-12 sm:h-16 border-b border-l border-neutral-900/30" />
+            <div className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 w-2.5 sm:w-3 h-2.5 sm:h-3 rounded-[2px] bg-lime-300 border border-neutral-900" />
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-8 md:p-14 lg:p-16">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center p-5 sm:p-8 md:p-14 lg:p-16">
             {/* Left Column: Typography & Action */}
             <div className="lg:col-span-7 flex flex-col items-start text-left">
               {/* Category Pill Tag */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 text-lime-300 border border-neutral-900 text-xs font-mono font-medium tracking-wide uppercase mb-6 shadow-sm">
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-neutral-900 text-lime-300 border border-neutral-900 text-xs font-mono font-medium tracking-wide uppercase mb-4 sm:mb-6 shadow-sm">
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>Statutory Intelligence for Ayurveda</span>
               </div>
 
               {/* Bold Punchy Headline */}
-              <h1 className="font-heading font-extrabold text-[40px] sm:text-[48px] lg:text-[56px] leading-[1.08] tracking-tight text-neutral-900 mb-6">
+              <h1 className="font-heading font-extrabold text-[32px] sm:text-[44px] lg:text-[56px] leading-[1.08] tracking-tight text-neutral-900 mb-4 sm:mb-6">
                 Ayurvedic Patenting and Compliance Made Simple
               </h1>
 
               {/* Journal Sub-headline */}
-              <p className="font-sans text-lg sm:text-xl text-neutral-700 leading-relaxed max-w-xl mb-8">
+              <p className="font-sans text-base sm:text-xl text-neutral-700 leading-relaxed max-w-xl mb-6 sm:mb-8">
                 You focus on inventing and refining your formulations. We handle the complex patent rules, biodiversity approvals, and traditional knowledge checks — zero legal background needed.
               </p>
 

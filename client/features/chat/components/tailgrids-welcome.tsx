@@ -68,41 +68,41 @@ export function TailgridsWelcome({
     }
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center px-4 py-8 max-w-4xl mx-auto w-full text-center relative z-10 font-sans">
+        <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 py-4 sm:py-8 max-w-4xl mx-auto w-full text-center relative z-10 font-sans">
             {/* 1. Centered Greeting (Landing Page Figtree Typography) */}
-            <div className="space-y-3 mb-8">
-                <h1 className="font-heading font-extrabold text-3xl sm:text-4xl md:text-5xl tracking-tight text-neutral-900 dark:text-[#FBF9F5]">
+            <div className="space-y-2 sm:space-y-3 mb-5 sm:mb-8">
+                <h1 className="font-heading font-extrabold text-2xl sm:text-4xl md:text-5xl tracking-tight text-neutral-900 dark:text-[#FBF9F5]">
                     Hey {firstName}, How Can I Assist?
                 </h1>
-                <p className="font-sans text-sm sm:text-base text-neutral-600 dark:text-[#9EA8B3] max-w-lg mx-auto font-normal leading-relaxed">
+                <p className="font-sans text-xs sm:text-base text-neutral-600 dark:text-[#9EA8B3] max-w-lg mx-auto font-normal leading-relaxed">
                     Check novelty, verify prior art, and navigate compliance in seconds.
                 </p>
             </div>
 
             {/* 2. Floating Tactile Card (Exact Landing Page Brutalist Pattern) */}
-            <div className="relative w-full max-w-2xl bg-[#FAF8F5] dark:bg-[#161B20] border-2 border-neutral-900 dark:border-white/20 rounded-[24px] p-5 shadow-[4px_4px_0px_0px_#121212] dark:shadow-[4px_4px_0px_0px_#D4F843]/30 transition-all text-left overflow-hidden">
+            <div className="relative w-full max-w-2xl bg-[#FAF8F5] dark:bg-[#161B20] border-2 border-neutral-900 dark:border-white/20 rounded-[20px] sm:rounded-[24px] p-3.5 sm:p-5 shadow-[3px_3px_0px_0px_#121212] sm:shadow-[4px_4px_0px_0px_#121212] dark:shadow-[3px_3px_0px_0px_#D4F843]/30 sm:dark:shadow-[4px_4px_0px_0px_#D4F843]/30 transition-all text-left overflow-hidden">
                 {/* Folded Paper Corner Notch (Top-Right Dog-Ear from Landing Page) */}
-                <div className="absolute top-0 right-0 w-12 h-12 pointer-events-none z-20">
-                    <div className="absolute top-0 right-0 w-0 h-0 border-t-[48px] border-t-[#F7F4EE] dark:border-t-[#111417] border-l-[48px] border-l-transparent drop-shadow-[-1px_1px_1px_rgba(0,0,0,0.15)]" />
-                    <div className="absolute top-0 right-0 w-12 h-12 border-b border-l border-neutral-900/30 dark:border-white/20" />
-                    <div className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-[2px] bg-lime-300 border border-neutral-900" />
+                <div className="absolute top-0 right-0 w-9 h-9 sm:w-12 sm:h-12 pointer-events-none z-20">
+                    <div className="absolute top-0 right-0 w-0 h-0 border-t-[36px] sm:border-t-[48px] border-t-[#F7F4EE] dark:border-t-[#111417] border-l-[36px] sm:border-l-[48px] border-l-transparent drop-shadow-[-1px_1px_1px_rgba(0,0,0,0.15)]" />
+                    <div className="absolute top-0 right-0 w-9 h-9 sm:w-12 sm:h-12 border-b border-l border-neutral-900/30 dark:border-white/20" />
+                    <div className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-2 sm:w-2.5 h-2 sm:h-2.5 rounded-[2px] bg-lime-300 border border-neutral-900" />
                 </div>
 
                 {/* Textarea */}
                 <textarea
-                    rows={3}
+                    rows={2}
                     value={promptText}
                     onChange={(e) => setPromptText(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask me anything..."
                     disabled={isSubmitting}
-                    className="w-full bg-transparent text-neutral-900 dark:text-[#FBF9F5] placeholder-neutral-500 dark:placeholder-[#6C7684] text-sm sm:text-base resize-none focus:outline-none scrollbar-none font-sans"
+                    className="w-full bg-transparent text-neutral-900 dark:text-[#FBF9F5] placeholder-neutral-500 dark:placeholder-[#6C7684] text-xs sm:text-base resize-none focus:outline-none scrollbar-none font-sans min-h-[48px]"
                 />
 
                 {/* Integrated Bottom Toolbar */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-neutral-900/10 dark:border-white/[0.08] mt-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 pt-2.5 sm:pt-3 border-t border-neutral-900/10 dark:border-white/[0.08] mt-2">
                     {/* Left Controls: Attach + Self-Explanatory Web Search + Reactive Jurisdiction */}
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         {/* Hidden file input */}
                         <input
                             ref={fileInputRef}
@@ -117,7 +117,7 @@ export function TailgridsWelcome({
                             title="Attach lab notes or formulation draft"
                             className="p-1.5 rounded-lg text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] border border-neutral-900/10 dark:border-white/10 transition-colors"
                         >
-                            <Paperclip className="size-4" />
+                            <Paperclip className="size-3.5 sm:size-4" />
                         </button>
 
                         {/* Self-Explanatory Web Search Pill Button */}
@@ -126,7 +126,7 @@ export function TailgridsWelcome({
                             onClick={() =>
                                 setWebSearch(workspaceId, !isWebSearchActive)
                             }
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                            className={`flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-medium border transition-all ${
                                 isWebSearchActive
                                     ? "bg-lime-300 border-neutral-900 text-neutral-900 font-bold shadow-[2px_2px_0px_0px_#121212] dark:shadow-none"
                                     : "bg-white dark:bg-[#111417] text-neutral-700 dark:text-[#9EA8B3] border-neutral-900/20 dark:border-white/10 hover:border-neutral-900/50"
@@ -159,7 +159,7 @@ export function TailgridsWelcome({
                                         onClick={() =>
                                             handleJurisdictionClick(opt.id)
                                         }
-                                        className={`px-2.5 py-1 rounded-md text-[11px] transition-all ${
+                                        className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-md text-[10px] sm:text-[11px] transition-all ${
                                             isActive
                                                 ? "bg-neutral-900 text-lime-300 dark:bg-[#28313B] dark:text-[#D4F843] font-bold shadow-sm"
                                                 : "text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5]"
@@ -178,14 +178,14 @@ export function TailgridsWelcome({
                             type="button"
                             onClick={() => handleSubmit()}
                             disabled={!promptText.trim() || isSubmitting}
-                            className={`size-9 rounded-full flex items-center justify-center border-2 border-neutral-900 dark:border-white/20 transition-all ${
+                            className={`size-8 sm:size-9 rounded-full flex items-center justify-center border-2 border-neutral-900 dark:border-white/20 transition-all ${
                                 promptText.trim() && !isSubmitting
                                     ? "bg-lime-300 text-neutral-900 shadow-[2px_2px_0px_0px_#121212] hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer"
                                     : "bg-neutral-200 dark:bg-[#28313B] text-neutral-400 dark:text-[#6C7684] cursor-not-allowed"
                             }`}
                             title="Send prompt"
                         >
-                            <ArrowUp className="size-4 stroke-[2.5]" />
+                            <ArrowUp className="size-3.5 sm:size-4 stroke-[2.5]" />
                         </button>
                     </div>
                 </div>

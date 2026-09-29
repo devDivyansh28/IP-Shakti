@@ -130,8 +130,27 @@ export function TailgridsSidebar({
             .toUpperCase();
     }, [userProfile]);
 
+    const closeSidebarOnMobile = () => {
+        if (
+            typeof window !== "undefined" &&
+            window.innerWidth < 768 &&
+            !isCollapsed
+        ) {
+            onToggleCollapse();
+        }
+    };
+
     return (
         <>
+            {/* Mobile Backdrop Overlay */}
+            {!isCollapsed && (
+                <div
+                    onClick={onToggleCollapse}
+                    className="fixed inset-0 bg-black/40 backdrop-blur-xs z-40 md:hidden"
+                    aria-hidden="true"
+                />
+            )}
+
             <motion.aside
                 initial={false}
                 animate={{
@@ -144,7 +163,11 @@ export function TailgridsSidebar({
                     stiffness: 240,
                     mass: 0.8,
                 }}
-                className="relative flex flex-col h-full bg-[#FAF8F5] dark:bg-[#0D1115] border-r-2 border-neutral-900/15 dark:border-white/10 text-neutral-900 dark:text-[#FBF9F5] select-none overflow-hidden shrink-0 z-20 font-sans"
+                className={`fixed inset-y-0 left-0 z-50 md:relative md:z-20 flex flex-col h-full bg-[#FAF8F5] dark:bg-[#0D1115] border-r-2 border-neutral-900/15 dark:border-white/10 text-neutral-900 dark:text-[#FBF9F5] select-none overflow-hidden shrink-0 font-sans ${
+                    !isCollapsed
+                        ? "shadow-2xl md:shadow-none"
+                        : "pointer-events-none md:pointer-events-auto"
+                }`}
             >
                 <div className="w-[280px] h-full flex flex-col justify-between">
                     {/* Top Content */}
@@ -153,7 +176,10 @@ export function TailgridsSidebar({
                         <div className="flex items-center justify-between px-4 py-4 border-b border-neutral-900/10 dark:border-white/[0.06]">
                             <button
                                 type="button"
-                                onClick={onNewChat}
+                                onClick={() => {
+                                    onNewChat();
+                                    closeSidebarOnMobile();
+                                }}
                                 title="IP-SAKTI AI Workspace"
                                 className="flex items-center gap-2 group cursor-pointer text-left"
                             >
@@ -181,7 +207,10 @@ export function TailgridsSidebar({
                             {/* 2. New Chat Link Row (Matching Screenshot) */}
                             <button
                                 type="button"
-                                onClick={onNewChat}
+                                onClick={() => {
+                                    onNewChat();
+                                    closeSidebarOnMobile();
+                                }}
                                 className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold text-neutral-900 dark:text-[#FBF9F5] hover:bg-neutral-200/50 dark:hover:bg-white/[0.06] transition-colors group text-left"
                             >
                                 <SquarePen className="size-4 text-neutral-600 dark:text-[#9EA8B3] group-hover:text-neutral-900 dark:group-hover:text-lime-300 transition-colors" />
@@ -254,6 +283,7 @@ export function TailgridsSidebar({
                                         >
                                             <Link
                                                 href={workspaceRoutes.detail(ws.id)}
+                                                onClick={closeSidebarOnMobile}
                                                 className="flex items-center gap-2.5 truncate flex-1 min-w-0"
                                             >
                                                 <Folder
@@ -307,9 +337,10 @@ export function TailgridsSidebar({
                                             isActive={
                                                 activeConversationId === chat.id
                                             }
-                                            onSelect={() =>
-                                                onSelectConversation(chat.id)
-                                            }
+                                            onSelect={() => {
+                                                onSelectConversation(chat.id);
+                                                closeSidebarOnMobile();
+                                            }}
                                             onDelete={(e) =>
                                                 handleDelete(e, chat.id)
                                             }
@@ -340,9 +371,10 @@ export function TailgridsSidebar({
                                             isActive={
                                                 activeConversationId === chat.id
                                             }
-                                            onSelect={() =>
-                                                onSelectConversation(chat.id)
-                                            }
+                                            onSelect={() => {
+                                                onSelectConversation(chat.id);
+                                                closeSidebarOnMobile();
+                                            }}
                                             onDelete={(e) =>
                                                 handleDelete(e, chat.id)
                                             }
@@ -372,7 +404,10 @@ export function TailgridsSidebar({
                     {/* 6. Floating Bottom User Tile (Warm Vanilla Pattern) */}
                     <div className="p-3 border-t border-neutral-900/10 dark:border-white/[0.06] bg-[#FAF8F5] dark:bg-[#0D1115]">
                         <div
-                            onClick={() => setSettingsOpen(true)}
+                            onClick={() => {
+                                setSettingsOpen(true);
+                                closeSidebarOnMobile();
+                            }}
                             className="flex items-center justify-between gap-2.5 p-2 rounded-2xl bg-white dark:bg-[#181E25] border-2 border-neutral-900 dark:border-white/10 shadow-[2px_2px_0px_0px_#121212] dark:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer transition-all group"
                         >
                             <div className="flex items-center gap-2.5 min-w-0">

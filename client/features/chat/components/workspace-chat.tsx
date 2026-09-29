@@ -69,6 +69,13 @@ export function WorkspaceChat({
     const handledAskPrompt = useRef<string | null>(null);
 
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.innerWidth < 768) {
+            setIsSidebarCollapsed(true);
+        }
+    }, []);
+
     const [conversationId, setConversationId] = useState<string | null>(null);
     const [isOptimisticActive, setIsOptimisticActive] = useState(false);
     const [optimisticUserText, setOptimisticUserText] = useState<string | null>(null);
@@ -308,24 +315,24 @@ export function WorkspaceChat({
             {/* 2. Main Workspace Canvas */}
             <div className="flex-1 flex flex-col h-full min-w-0 bg-[#FAF8F5] dark:bg-[#0B0F12] relative overflow-hidden">
                 {/* Top Control Bar */}
-                <div className="h-14 border-b-2 border-neutral-900/10 dark:border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/60 backdrop-blur-md z-10">
-                    <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-14 border-b-2 border-neutral-900/10 dark:border-white/[0.06] flex items-center justify-between px-3 sm:px-4 shrink-0 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/60 backdrop-blur-md z-10 gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                         {isSidebarCollapsed && (
                             <button
                                 type="button"
                                 onClick={() => setIsSidebarCollapsed(false)}
                                 title="Expand sidebar"
-                                className="p-1.5 rounded-lg text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] transition-colors border border-neutral-900/10 dark:border-white/10"
+                                className="p-1.5 rounded-lg text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] transition-colors border border-neutral-900/10 dark:border-white/10 shrink-0"
                             >
                                 <PanelLeftOpen className="size-4" />
                             </button>
                         )}
 
-                        <div className="flex items-center gap-2 min-w-0">
+                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                             {currentWorkspace?.title ? (
-                                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-[#9EA8B3] shrink-0">
-                                    <Folder className="size-3.5 text-neutral-900 dark:text-lime-300" />
-                                    <span className="truncate max-w-[120px] sm:max-w-[200px]">
+                                <div className="flex items-center gap-1 sm:gap-1.5 text-xs font-bold text-neutral-700 dark:text-[#9EA8B3] shrink-0 min-w-0">
+                                    <Folder className="size-3.5 text-neutral-900 dark:text-lime-300 shrink-0" />
+                                    <span className="truncate max-w-[85px] xs:max-w-[120px] sm:max-w-[180px]">
                                         {currentWorkspace.title}
                                     </span>
                                     {activeConversation?.title ? (
@@ -335,14 +342,14 @@ export function WorkspaceChat({
                             ) : null}
 
                             {activeConversation?.title ? (
-                                <h2 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-[#FBF9F5] truncate max-w-[160px] sm:max-w-md font-heading">
+                                <h2 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-[#FBF9F5] truncate max-w-[110px] xs:max-w-[160px] sm:max-w-md font-heading">
                                     {activeConversation.title}
                                 </h2>
                             ) : null}
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                         {/* Theme Toggle Button */}
                         <ModeToggle />
 
@@ -352,7 +359,7 @@ export function WorkspaceChat({
                                     type="button"
                                     onClick={handleExportChat}
                                     title="Export consultation as Markdown"
-                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] border-2 border-neutral-900/20 dark:border-white/[0.06] transition-colors"
+                                    className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] border-2 border-neutral-900/20 dark:border-white/[0.06] transition-colors"
                                 >
                                     <Download className="size-3.5" />
                                     <span className="hidden sm:inline">
@@ -391,14 +398,14 @@ export function WorkspaceChat({
                             <MessageScrollerProvider>
                                 <MessageScroller className="min-h-0 flex-1">
                                     <MessageScrollerViewport>
-                                        <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
+                                        <MessageScrollerContent className="mx-auto w-full max-w-3xl px-3 sm:px-4 py-4 sm:py-6">
                                             {messagesLoading ? (
                                                 <div className="space-y-4">
                                                     <Skeleton className="h-16 w-2/3 rounded-2xl bg-neutral-200/80 dark:bg-white/[0.04]" />
                                                     <Skeleton className="ml-auto h-16 w-1/2 rounded-2xl bg-neutral-200/80 dark:bg-white/[0.04]" />
                                                 </div>
                                             ) : (
-                                                <div className="space-y-6 w-full">
+                                                <div className="space-y-4 sm:space-y-6 w-full">
                                                     {messages.map(
                                                         (
                                                             message,
@@ -430,7 +437,7 @@ export function WorkspaceChat({
                                                                     {isUser ? (
                                                                         /* Clean User Bubble (Aligned Right) */
                                                                         <div className="flex w-full justify-end">
-                                                                            <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-tr-sm bg-neutral-900 text-white dark:bg-[#1D232A] dark:text-[#FBF9F5] border border-neutral-900 dark:border-white/10 px-4 py-3 text-sm leading-relaxed shadow-sm font-sans">
+                                                                            <div className="max-w-[88%] sm:max-w-[75%] rounded-2xl rounded-tr-sm bg-neutral-900 text-white dark:bg-[#1D232A] dark:text-[#FBF9F5] border border-neutral-900 dark:border-white/10 px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm leading-relaxed shadow-sm font-sans">
                                                                                 {getMessageText(
                                                                                     message,
                                                                                 )}
@@ -438,11 +445,11 @@ export function WorkspaceChat({
                                                                         </div>
                                                                     ) : (
                                                                         /* Clean Assistant Card (Avatar at TOP, Clean Rounded Surface) */
-                                                                        <div className="flex w-full items-start gap-3">
-                                                                            <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 dark:border-white/20 flex items-center justify-center shrink-0 mt-0.5 text-neutral-900 font-bold shadow-sm">
-                                                                                <ShieldCheck className="size-4 text-neutral-900" />
+                                                                        <div className="flex w-full items-start gap-2.5 sm:gap-3">
+                                                                            <div className="size-7 sm:size-8 rounded-lg bg-lime-300 border border-neutral-900 dark:border-white/20 flex items-center justify-center shrink-0 mt-0.5 text-neutral-900 font-bold shadow-sm">
+                                                                                <ShieldCheck className="size-3.5 sm:size-4 text-neutral-900" />
                                                                             </div>
-                                                                            <div className="flex-1 min-w-0 bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border border-neutral-900/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 text-sm leading-relaxed shadow-sm font-sans">
+                                                                            <div className="flex-1 min-w-0 bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border border-neutral-900/10 dark:border-white/10 rounded-2xl p-3.5 sm:p-5 text-xs sm:text-sm leading-relaxed shadow-sm font-sans">
                                                                                 <ChatMessageBody
                                                                                     text={getMessageText(
                                                                                         message,
@@ -482,7 +489,7 @@ export function WorkspaceChat({
                                                     {optimisticUserText && (
                                                         <MessageScrollerItem scrollAnchor>
                                                             <div className="flex w-full justify-end">
-                                                                <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-tr-sm bg-neutral-900 text-white dark:bg-[#1D232A] dark:text-[#FBF9F5] border border-neutral-900 dark:border-white/10 px-4 py-3 text-sm leading-relaxed shadow-sm font-sans">
+                                                                <div className="max-w-[88%] sm:max-w-[75%] rounded-2xl rounded-tr-sm bg-neutral-900 text-white dark:bg-[#1D232A] dark:text-[#FBF9F5] border border-neutral-900 dark:border-white/10 px-3.5 sm:px-4 py-2.5 sm:py-3 text-xs sm:text-sm leading-relaxed shadow-sm font-sans">
                                                                     {optimisticUserText}
                                                                 </div>
                                                             </div>
@@ -497,11 +504,11 @@ export function WorkspaceChat({
                                                         )) &&
                                                         !hasAssistantChunk && (
                                                             <MessageScrollerItem scrollAnchor>
-                                                                <div className="flex w-full items-start gap-3">
-                                                                    <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 dark:border-white/20 flex items-center justify-center shrink-0 mt-0.5 text-neutral-900 font-bold shadow-sm">
-                                                                        <ShieldCheck className="size-4 text-neutral-900" />
+                                                                <div className="flex w-full items-start gap-2.5 sm:gap-3">
+                                                                    <div className="size-7 sm:size-8 rounded-lg bg-lime-300 border border-neutral-900 dark:border-white/20 flex items-center justify-center shrink-0 mt-0.5 text-neutral-900 font-bold shadow-sm">
+                                                                        <ShieldCheck className="size-3.5 sm:size-4 text-neutral-900" />
                                                                     </div>
-                                                                    <div className="flex-1 min-w-0 bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border border-neutral-900/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 text-sm leading-relaxed shadow-sm font-sans">
+                                                                    <div className="flex-1 min-w-0 bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border border-neutral-900/10 dark:border-white/10 rounded-2xl p-3.5 sm:p-5 text-xs sm:text-sm leading-relaxed shadow-sm font-sans">
                                                                         <ChatMessageBody
                                                                             text=""
                                                                             workspaceId={
