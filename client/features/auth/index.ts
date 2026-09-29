@@ -1,4 +1,6 @@
 export { LoginForm } from "./components/login-form";
+export { AuthModal } from "./components/auth-modal";
+export { useAuthModal } from "./hooks/use-auth-modal";
 export { SignOutButton } from "./components/sign-out-button";
 
 export { authClient, signIn, signOut } from "./lib/auth-client";

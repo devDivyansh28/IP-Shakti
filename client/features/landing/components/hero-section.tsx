@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { authRoutes } from "@/features/auth/lib/auth-routes";
+import { useAuthModal } from "@/features/auth/hooks/use-auth-modal";
 
 interface HeroSectionProps {
   isAuthenticated?: boolean;
 }
 
 export function HeroSection({ isAuthenticated = false }: HeroSectionProps) {
+  const openAuthModal = useAuthModal((s) => s.openAuthModal);
   const targetHref = isAuthenticated ? authRoutes.dashboard : authRoutes.login;
 
   return (
@@ -52,13 +54,24 @@ export function HeroSection({ isAuthenticated = false }: HeroSectionProps) {
 
               {/* CTA Group */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-3">
-                <Link
-                  href={targetHref}
-                  className="inline-flex items-center justify-center px-8 py-3.5 rounded-[13px] text-base font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[3px_3px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 group"
-                >
-                  <span>START CHAT</span>
-                  <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-150" strokeWidth={2.5} />
-                </Link>
+                {!isAuthenticated ? (
+                  <button
+                    type="button"
+                    onClick={() => openAuthModal()}
+                    className="inline-flex items-center justify-center px-8 py-3.5 rounded-[13px] text-base font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[3px_3px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 group cursor-pointer"
+                  >
+                    <span>START CHAT</span>
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-150" strokeWidth={2.5} />
+                  </button>
+                ) : (
+                  <Link
+                    href={targetHref}
+                    className="inline-flex items-center justify-center px-8 py-3.5 rounded-[13px] text-base font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[3px_3px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 group"
+                  >
+                    <span>START CHAT</span>
+                    <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-150" strokeWidth={2.5} />
+                  </Link>
+                )}
 
                 <a
                   href="#demo"

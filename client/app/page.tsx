@@ -1,4 +1,5 @@
 import { getSession } from "@/features/auth/lib/auth-server";
+import { AuthModal } from "@/features/auth/components/auth-modal";
 import {
   LandingNavbar,
   HeroSection,
@@ -50,6 +51,9 @@ export default async function HomePage() {
 
       {/* 10. Final Call-to-Action Card & Legal Footer */}
       <FinalCtaFooter isAuthenticated={isAuthenticated} />
+
+      {/* Modular Centered Auth Dialog */}
+      <AuthModal />
     </div>
   );
 }

@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { ArrowRight, Scale, ShieldCheck } from "lucide-react";
 import { authRoutes } from "@/features/auth/lib/auth-routes";
+import { useAuthModal } from "@/features/auth/hooks/use-auth-modal";
 
 interface FinalCtaFooterProps {
   isAuthenticated?: boolean;
 }
 
 export function FinalCtaFooter({ isAuthenticated = false }: FinalCtaFooterProps) {
+  const openAuthModal = useAuthModal((s) => s.openAuthModal);
   const targetHref = isAuthenticated ? authRoutes.dashboard : authRoutes.login;
 
   return (
@@ -33,13 +35,24 @@ export function FinalCtaFooter({ isAuthenticated = false }: FinalCtaFooterProps)
               Join researchers, startups, and institutions using Sahayak to navigate patenting and compliance with total confidence.
             </p>
 
-            <Link
-              href={targetHref}
-              className="inline-flex items-center justify-center px-8 py-3.5 rounded-[13px] text-base font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[3px_3px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 group"
-            >
-              <span>START CHAT</span>
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-150" strokeWidth={2.5} />
-            </Link>
+            {!isAuthenticated ? (
+              <button
+                type="button"
+                onClick={() => openAuthModal()}
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-[13px] text-base font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[3px_3px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 group cursor-pointer"
+              >
+                <span>START CHAT</span>
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-150" strokeWidth={2.5} />
+              </button>
+            ) : (
+              <Link
+                href={targetHref}
+                className="inline-flex items-center justify-center px-8 py-3.5 rounded-[13px] text-base font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[3px_3px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 group"
+              >
+                <span>START CHAT</span>
+                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform duration-150" strokeWidth={2.5} />
+              </Link>
+            )}
           </div>
         </div>
 

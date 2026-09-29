@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { Scale, ArrowRight, LogIn } from "lucide-react";
 import { authRoutes } from "@/features/auth/lib/auth-routes";
+import { useAuthModal } from "@/features/auth/hooks/use-auth-modal";
 
 interface LandingNavbarProps {
   isAuthenticated?: boolean;
 }
 
 export function LandingNavbar({ isAuthenticated = false }: LandingNavbarProps) {
+  const openAuthModal = useAuthModal((s) => s.openAuthModal);
   const targetChatHref = isAuthenticated ? authRoutes.dashboard : authRoutes.login;
 
   return (
@@ -61,21 +63,23 @@ export function LandingNavbar({ isAuthenticated = false }: LandingNavbarProps) {
         <div className="flex items-center gap-3 shrink-0">
           {!isAuthenticated ? (
             <>
-              <Link
-                href={authRoutes.login}
-                className="hidden sm:inline-flex items-center justify-center px-4 py-2 h-[42px] rounded-[11px] text-sm font-semibold text-neutral-900 border border-neutral-900/80 bg-[#FAF8F5] hover:bg-neutral-200/50 transition-colors duration-200"
+              <button
+                type="button"
+                onClick={() => openAuthModal()}
+                className="hidden sm:inline-flex items-center justify-center px-4 py-2 h-[42px] rounded-[11px] text-sm font-semibold text-neutral-900 border border-neutral-900/80 bg-[#FAF8F5] hover:bg-neutral-200/50 transition-colors duration-200 cursor-pointer"
               >
                 <LogIn className="w-4 h-4 mr-1.5" />
                 LOG IN
-              </Link>
+              </button>
 
-              <Link
-                href={authRoutes.login}
-                className="inline-flex items-center justify-center px-5 py-2 h-[42px] rounded-[11px] text-sm font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[2px_2px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150"
+              <button
+                type="button"
+                onClick={() => openAuthModal()}
+                className="inline-flex items-center justify-center px-5 py-2 h-[42px] rounded-[11px] text-sm font-bold text-neutral-900 bg-lime-300 border-2 border-neutral-900 shadow-[2px_2px_0px_0px_#121212] hover:bg-lime-400 active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all duration-150 cursor-pointer"
               >
                 <span>START CHAT</span>
                 <ArrowRight className="w-4 h-4 ml-1.5" strokeWidth={2.5} />
-              </Link>
+              </button>
             </>
           ) : (
             <Link
