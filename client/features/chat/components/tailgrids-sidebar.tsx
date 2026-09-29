@@ -23,6 +23,7 @@ import { useUserProfile } from "@/features/auth/hooks/use-user-profile";
 import { workspaceRoutes } from "@/features/workspaces/lib/routes";
 import { CreateProjectModal } from "@/features/workspaces/components/create-project-modal";
 import { SettingsDialog } from "./settings-dialog";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 import type { Conversation } from "../lib/types";
 
 type TailgridsSidebarProps = {
@@ -113,41 +114,48 @@ export function TailgridsSidebar({
                     stiffness: 240,
                     mass: 0.8,
                 }}
-                className="relative flex flex-col h-full bg-[#0D1115] border-r border-white/[0.08] text-[#FBF9F5] select-none overflow-hidden shrink-0 z-20 font-sans"
+                className="relative flex flex-col h-full bg-[#FAF8F5] dark:bg-[#0D1115] border-r-2 border-neutral-900/15 dark:border-white/10 text-neutral-900 dark:text-[#FBF9F5] select-none overflow-hidden shrink-0 z-20 font-sans"
             >
                 <div className="w-[280px] h-full flex flex-col justify-between">
                     {/* Top Content */}
-                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 flex flex-col">
-                        {/* 1. Header: Brand + Collapse Button */}
-                        <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
+                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-300 dark:scrollbar-thumb-white/10 flex flex-col">
+                        {/* 1. Header: Brand + Theme Toggle + Collapse Button */}
+                        <div className="flex items-center justify-between px-4 py-4 border-b border-neutral-900/10 dark:border-white/[0.06]">
                             <Link
                                 href="/dashboard"
                                 className="flex items-center gap-2 group"
                             >
-                                <Sparkles className="size-5 text-[#D4F843] group-hover:rotate-12 transition-transform" />
-                                <span className="font-semibold text-base tracking-tight text-[#FBF9F5] font-heading">
+                                <div className="size-7 rounded-md bg-lime-300 border border-neutral-900 flex items-center justify-center shadow-sm">
+                                    <Sparkles className="size-4 text-neutral-900 group-hover:rotate-12 transition-transform" />
+                                </div>
+                                <span className="font-heading font-extrabold text-base tracking-tight text-neutral-900 dark:text-[#FBF9F5]">
                                     IP-SAKTI
                                 </span>
                             </Link>
 
-                            <button
-                                type="button"
-                                onClick={onToggleCollapse}
-                                title="Collapse sidebar"
-                                className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors"
-                            >
-                                <PanelLeftClose className="size-4" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                                {/* Theme Toggle Button */}
+                                <ModeToggle />
+
+                                <button
+                                    type="button"
+                                    onClick={onToggleCollapse}
+                                    title="Collapse sidebar"
+                                    className="p-1.5 rounded-lg text-neutral-600 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/50 dark:hover:bg-white/[0.06] transition-colors"
+                                >
+                                    <PanelLeftClose className="size-4" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="px-3 pt-3 space-y-1">
-                            {/* 2. New Chat Link Row (Matching TailGrids Screenshot) */}
+                            {/* 2. New Chat Link Row (Matching Screenshot) */}
                             <button
                                 type="button"
                                 onClick={onNewChat}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-[#FBF9F5] hover:bg-white/[0.06] transition-colors group text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-semibold text-neutral-900 dark:text-[#FBF9F5] hover:bg-neutral-200/50 dark:hover:bg-white/[0.06] transition-colors group text-left"
                             >
-                                <SquarePen className="size-4 text-[#9EA8B3] group-hover:text-[#D4F843] transition-colors" />
+                                <SquarePen className="size-4 text-neutral-600 dark:text-[#9EA8B3] group-hover:text-neutral-900 dark:group-hover:text-lime-300 transition-colors" />
                                 <span>New Chat</span>
                             </button>
 
@@ -157,14 +165,14 @@ export function TailgridsSidebar({
                                     <button
                                         type="button"
                                         onClick={() => setSearchOpen(true)}
-                                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-normal text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors text-left"
+                                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-normal text-neutral-600 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/50 dark:hover:bg-white/[0.06] transition-colors text-left"
                                     >
-                                        <Search className="size-4 text-[#9EA8B3]" />
+                                        <Search className="size-4" />
                                         <span>Search</span>
                                     </button>
                                 ) : (
                                     <div className="relative my-1">
-                                        <Search className="absolute left-2.5 top-2.5 size-3.5 text-[#9EA8B3]" />
+                                        <Search className="absolute left-2.5 top-2.5 size-3.5 text-neutral-500 dark:text-[#9EA8B3]" />
                                         <input
                                             type="text"
                                             autoFocus
@@ -177,7 +185,7 @@ export function TailgridsSidebar({
                                                 if (!searchQuery)
                                                     setSearchOpen(false);
                                             }}
-                                            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#161B20] text-xs text-[#FBF9F5] placeholder-[#6C7684] border border-white/[0.08] focus:border-[#D4F843]/60 focus:outline-none transition-colors"
+                                            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-white dark:bg-[#161B20] text-xs text-neutral-900 dark:text-[#FBF9F5] placeholder-neutral-400 dark:placeholder-[#6C7684] border border-neutral-900/20 dark:border-white/[0.08] focus:border-neutral-900 dark:focus:border-lime-300 focus:outline-none transition-colors"
                                         />
                                     </div>
                                 )}
@@ -186,13 +194,13 @@ export function TailgridsSidebar({
 
                         {/* 4. Projects Section */}
                         <div className="px-3 pt-5">
-                            <div className="flex items-center justify-between px-3 py-1 text-xs font-semibold text-[#9EA8B3] tracking-wide">
+                            <div className="flex items-center justify-between px-3 py-1 text-xs font-bold text-neutral-600 dark:text-[#9EA8B3] tracking-wide uppercase font-mono">
                                 <span>Projects</span>
                                 <button
                                     type="button"
                                     onClick={() => setCreateProjectOpen(true)}
                                     title="Create New Project"
-                                    className="p-1 rounded-md text-[#9EA8B3] hover:text-[#D4F843] hover:bg-white/[0.06] transition-colors"
+                                    className="p-1 rounded-md text-neutral-600 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-lime-300 hover:bg-neutral-200/50 dark:hover:bg-white/[0.06] transition-colors"
                                 >
                                     <FolderPlus className="size-4" />
                                 </button>
@@ -201,7 +209,6 @@ export function TailgridsSidebar({
                             <div className="mt-1 space-y-0.5">
                                 {workspaces.map((ws, idx) => {
                                     const isCurrent = ws.id === workspaceId;
-                                    // 2-digit format count (e.g., 01, 02)
                                     const countStr = String(idx + 1).padStart(
                                         2,
                                         "0",
@@ -213,16 +220,16 @@ export function TailgridsSidebar({
                                             href={workspaceRoutes.detail(ws.id)}
                                             className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
                                                 isCurrent
-                                                    ? "bg-[#181E25] text-[#FBF9F5] font-medium border border-white/[0.08]"
-                                                    : "text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.04]"
+                                                    ? "bg-white dark:bg-[#181E25] text-neutral-900 dark:text-[#FBF9F5] font-semibold border-2 border-neutral-900 dark:border-white/10 shadow-[2px_2px_0px_0px_#121212] dark:shadow-none"
+                                                    : "text-neutral-600 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/40 dark:hover:bg-white/[0.04]"
                                             }`}
                                         >
                                             <div className="flex items-center gap-2.5 truncate">
                                                 <Folder
                                                     className={`size-4 shrink-0 ${
                                                         isCurrent
-                                                            ? "text-[#D4F843]"
-                                                            : "text-[#6C7684]"
+                                                            ? "text-neutral-900 dark:text-lime-300 fill-neutral-900/10 dark:fill-lime-300/10"
+                                                            : "text-neutral-500 dark:text-[#6C7684]"
                                                     }`}
                                                 />
                                                 <span className="truncate">
@@ -230,7 +237,7 @@ export function TailgridsSidebar({
                                                 </span>
                                             </div>
 
-                                            <span className="text-[10px] font-mono text-[#6C7684] px-1.5 py-0.5 rounded bg-white/[0.04]">
+                                            <span className="text-[10px] font-mono text-neutral-600 dark:text-[#6C7684] px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-white/[0.04]">
                                                 {countStr}
                                             </span>
                                         </Link>
@@ -244,7 +251,7 @@ export function TailgridsSidebar({
                             {/* TODAY */}
                             {todayChats.length > 0 && (
                                 <div className="space-y-1">
-                                    <div className="px-3 text-[10px] font-mono uppercase tracking-wider text-[#6C7684]">
+                                    <div className="px-3 text-[10px] font-mono uppercase tracking-wider text-neutral-500 dark:text-[#6C7684] font-bold">
                                         TODAY
                                     </div>
                                     {todayChats.map((chat) => (
@@ -277,7 +284,7 @@ export function TailgridsSidebar({
                             {/* YESTERDAY / EARLIER */}
                             {yesterdayChats.length > 0 && (
                                 <div className="space-y-1">
-                                    <div className="px-3 text-[10px] font-mono uppercase tracking-wider text-[#6C7684]">
+                                    <div className="px-3 text-[10px] font-mono uppercase tracking-wider text-neutral-500 dark:text-[#6C7684] font-bold">
                                         YESTERDAY
                                     </div>
                                     {yesterdayChats.map((chat) => (
@@ -309,28 +316,28 @@ export function TailgridsSidebar({
 
                             {!isConversationsLoading &&
                                 filteredConversations.length === 0 && (
-                                    <div className="px-3 py-4 text-xs text-[#6C7684] italic">
+                                    <div className="px-3 py-4 text-xs text-neutral-500 dark:text-[#6C7684] italic">
                                         No recent consultations
                                     </div>
                                 )}
                         </div>
                     </div>
 
-                    {/* 6. Floating Bottom User Tile (Matching Screenshot) */}
-                    <div className="p-3 border-t border-white/[0.06] bg-[#0D1115]">
+                    {/* 6. Floating Bottom User Tile (Warm Vanilla Pattern) */}
+                    <div className="p-3 border-t border-neutral-900/10 dark:border-white/[0.06] bg-[#FAF8F5] dark:bg-[#0D1115]">
                         <div
                             onClick={() => setSettingsOpen(true)}
-                            className="flex items-center justify-between gap-2.5 p-2 rounded-2xl bg-gradient-to-r from-white/[0.06] to-white/[0.02] border border-white/[0.08] hover:border-[#D4F843]/40 cursor-pointer transition-all shadow-lg group"
+                            className="flex items-center justify-between gap-2.5 p-2 rounded-2xl bg-white dark:bg-[#181E25] border-2 border-neutral-900 dark:border-white/10 shadow-[2px_2px_0px_0px_#121212] dark:shadow-none hover:translate-x-[1px] hover:translate-y-[1px] cursor-pointer transition-all group"
                         >
                             <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="size-8 rounded-full bg-gradient-to-br from-[#28313B] to-[#12161A] border border-white/10 flex items-center justify-center text-xs font-semibold text-[#D4F843] shrink-0">
+                                <div className="size-8 rounded-full bg-lime-300 border border-neutral-900 flex items-center justify-center text-xs font-bold text-neutral-900 shrink-0">
                                     {userInitials}
                                 </div>
                                 <div className="min-w-0 text-left">
-                                    <p className="text-xs font-semibold text-[#FBF9F5] truncate">
+                                    <p className="text-xs font-bold text-neutral-900 dark:text-[#FBF9F5] truncate">
                                         {userProfile?.name ?? "Researcher"}
                                     </p>
-                                    <p className="text-[10px] text-[#9EA8B3] truncate">
+                                    <p className="text-[10px] text-neutral-600 dark:text-[#9EA8B3] truncate">
                                         {userProfile?.role === "ADMIN"
                                             ? "Admin"
                                             : "Scholar"}
@@ -338,7 +345,7 @@ export function TailgridsSidebar({
                                 </div>
                             </div>
 
-                            <span className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-white/[0.06] text-[#9EA8B3] group-hover:text-[#FBF9F5] group-hover:bg-white/[0.1] transition-colors shrink-0">
+                            <span className="px-2 py-1 rounded-lg text-[10px] font-bold bg-neutral-100 dark:bg-white/[0.06] text-neutral-700 dark:text-[#9EA8B3] group-hover:text-neutral-900 dark:group-hover:text-[#FBF9F5] transition-colors shrink-0">
                                 Settings
                             </span>
                         </div>
@@ -383,8 +390,8 @@ function ChatListItem({
             onClick={onSelect}
             className={`group relative flex items-center justify-between px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
                 isActive
-                    ? "bg-[#181E25] text-[#FBF9F5] font-medium border-l-2 border-l-[#D4F843]"
-                    : "text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.04]"
+                    ? "bg-white dark:bg-[#181E25] text-neutral-900 dark:text-[#FBF9F5] font-semibold border-l-4 border-l-lime-300 dark:border-l-[#D4F843] border border-neutral-900/10 dark:border-white/10"
+                    : "text-neutral-600 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/40 dark:hover:bg-white/[0.04]"
             }`}
         >
             <span className="truncate pr-2 font-normal">
@@ -395,17 +402,17 @@ function ChatListItem({
                 <button
                     type="button"
                     onClick={onToggleMenu}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/[0.08] text-[#9EA8B3] hover:text-[#FBF9F5] transition-opacity"
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-neutral-200 dark:hover:bg-white/[0.08] text-neutral-600 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] transition-opacity"
                 >
                     <MoreHorizontal className="size-3.5" />
                 </button>
 
                 {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-30 w-32 bg-[#181E25] border border-white/10 rounded-lg shadow-xl p-1 text-xs">
+                    <div className="absolute right-0 top-full mt-1 z-30 w-32 bg-white dark:bg-[#181E25] border-2 border-neutral-900 dark:border-white/10 rounded-lg shadow-[3px_3px_0px_0px_#121212] p-1 text-xs">
                         <button
                             type="button"
                             onClick={onDelete}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-red-400 hover:bg-red-500/10 text-left transition-colors"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 text-left transition-colors font-medium"
                         >
                             <Trash2 className="size-3.5" />
                             <span>Delete Chat</span>

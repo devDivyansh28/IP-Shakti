@@ -40,6 +40,7 @@ import { CitationSources } from "./citation-sources";
 import { ChatComposer } from "./chat-composer";
 import { TailgridsSidebar } from "./tailgrids-sidebar";
 import { TailgridsWelcome } from "./tailgrids-welcome";
+import { ModeToggle } from "@/components/ui/mode-toggle";
 import type { ChatCitation } from "../lib/types";
 import { workspaceRoutes } from "@/features/workspaces/lib/routes";
 import {
@@ -251,8 +252,8 @@ export function WorkspaceChat({
     }
 
     return (
-        <div className="flex h-screen w-full bg-[#0B0F12] text-[#FBF9F5] overflow-hidden font-sans">
-            {/* 1. TailGrids Left Sidebar */}
+        <div className="flex h-screen w-full bg-[#FAF8F5] dark:bg-[#0B0F12] text-neutral-900 dark:text-[#FBF9F5] overflow-hidden font-sans">
+            {/* 1. Left Sidebar */}
             <TailgridsSidebar
                 workspaceId={workspaceId}
                 activeConversationId={conversationId}
@@ -265,10 +266,10 @@ export function WorkspaceChat({
             />
 
             {/* 2. Main Workspace Canvas */}
-            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#0B0F12] relative overflow-hidden">
+            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#FAF8F5] dark:bg-[#0B0F12] relative overflow-hidden">
                 {/* Background Texture from Landing Page */}
                 <div
-                    className="pointer-events-none absolute inset-0 opacity-[0.03] z-0 select-none"
+                    className="pointer-events-none absolute inset-0 opacity-[0.035] dark:opacity-[0.03] z-0 select-none"
                     style={{
                         backgroundImage: "url('/images/background_mat.svg')",
                         backgroundRepeat: "repeat",
@@ -276,34 +277,37 @@ export function WorkspaceChat({
                 />
 
                 {/* Top Control Bar */}
-                <div className="h-14 border-b border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#0E1216]/60 backdrop-blur-md z-10">
+                <div className="h-14 border-b-2 border-neutral-900/10 dark:border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/60 backdrop-blur-md z-10">
                     <div className="flex items-center gap-3 min-w-0">
                         {isSidebarCollapsed && (
                             <button
                                 type="button"
                                 onClick={() => setIsSidebarCollapsed(false)}
                                 title="Expand sidebar"
-                                className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors"
+                                className="p-1.5 rounded-lg text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] transition-colors border border-neutral-900/10 dark:border-white/10"
                             >
                                 <PanelLeftOpen className="size-4" />
                             </button>
                         )}
 
                         {activeConversation?.title ? (
-                            <h2 className="text-xs sm:text-sm font-medium text-[#FBF9F5] truncate max-w-md font-heading">
+                            <h2 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-[#FBF9F5] truncate max-w-md font-heading">
                                 {activeConversation.title}
                             </h2>
                         ) : null}
                     </div>
 
                     <div className="flex items-center gap-2">
+                        {/* Theme Toggle Button */}
+                        <ModeToggle />
+
                         {messages.length > 0 && (
                             <>
                                 <button
                                     type="button"
                                     onClick={handleExportChat}
                                     title="Export consultation as Markdown"
-                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] border border-white/[0.06] transition-colors"
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold text-neutral-700 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/60 dark:hover:bg-white/[0.06] border-2 border-neutral-900/20 dark:border-white/[0.06] transition-colors"
                                 >
                                     <Download className="size-3.5" />
                                     <span className="hidden sm:inline">
@@ -319,7 +323,7 @@ export function WorkspaceChat({
                                         }
                                         disabled={deleteConversation.isPending}
                                         title="Delete chat"
-                                        className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                        className="p-1.5 rounded-lg text-neutral-600 dark:text-[#9EA8B3] hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                                     >
                                         <Trash2 className="size-3.5" />
                                     </button>
@@ -347,8 +351,8 @@ export function WorkspaceChat({
                                         <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
                                             {messagesLoading ? (
                                                 <div className="space-y-4">
-                                                    <Skeleton className="h-16 w-2/3 rounded-2xl bg-white/[0.04]" />
-                                                    <Skeleton className="ml-auto h-16 w-1/2 rounded-2xl bg-white/[0.04]" />
+                                                    <Skeleton className="h-16 w-2/3 rounded-2xl bg-neutral-200/80 dark:bg-white/[0.04]" />
+                                                    <Skeleton className="ml-auto h-16 w-1/2 rounded-2xl bg-neutral-200/80 dark:bg-white/[0.04]" />
                                                 </div>
                                             ) : (
                                                 <MessageGroup className="gap-6">
@@ -388,8 +392,8 @@ export function WorkspaceChat({
                                                                         }
                                                                     >
                                                                         {!isUser && (
-                                                                            <MessageAvatar className="size-8 rounded-lg bg-[#D4F843] flex items-center justify-center text-black shadow-sm shadow-[#D4F843]/20">
-                                                                                <ShieldCheck className="size-4 text-black" />
+                                                                            <MessageAvatar className="size-8 rounded-lg bg-lime-300 border-2 border-neutral-900 flex items-center justify-center text-neutral-900 font-bold shadow-sm">
+                                                                                <ShieldCheck className="size-4 text-neutral-900" />
                                                                             </MessageAvatar>
                                                                         )}
                                                                         <MessageContent>
@@ -406,11 +410,11 @@ export function WorkspaceChat({
                                                                                 }
                                                                                 className={
                                                                                     isUser
-                                                                                        ? "bg-[#181E25] text-[#FBF9F5] border border-white/[0.08]"
-                                                                                        : "bg-transparent text-[#FBF9F5]"
+                                                                                        ? "bg-neutral-900 text-white dark:bg-[#181E25] dark:text-[#FBF9F5] border-2 border-neutral-900 dark:border-white/10 shadow-[2px_2px_0px_0px_#D4F843]"
+                                                                                        : "bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border-2 border-neutral-900 dark:border-white/20 shadow-[3px_3px_0px_0px_#121212] dark:shadow-none rounded-2xl"
                                                                                 }
                                                                             >
-                                                                                <BubbleContent className="leading-relaxed">
+                                                                                <BubbleContent className="leading-relaxed p-4">
                                                                                     {isUser ? (
                                                                                         getMessageText(
                                                                                             message,
@@ -461,7 +465,7 @@ export function WorkspaceChat({
                             </MessageScrollerProvider>
 
                             {error ? (
-                                <div className="border-t border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-300">
+                                <div className="border-t-2 border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-600 dark:text-red-300 font-semibold">
                                     {error.message}
                                 </div>
                             ) : null}
