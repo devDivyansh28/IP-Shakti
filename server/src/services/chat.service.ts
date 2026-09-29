@@ -213,7 +213,18 @@ export async function streamSahayakChat(
     const webSearchEnabled =
         input.webSearch === true && !!process.env.TAVILY_API_KEY?.trim();
 
-    const userText = getLastUserMessageText(input.messages);
+    const normalizedMessages: UIMessage[] = input.messages.map((m: any, idx: number) => {
+        if (!Array.isArray(m.parts) && typeof m.content === "string") {
+            return {
+                id: m.id ?? `msg_${Date.now()}_${idx}`,
+                role: m.role,
+                parts: [{ type: "text", text: m.content }],
+            } as UIMessage;
+        }
+        return m as UIMessage;
+    });
+
+    const userText = getLastUserMessageText(normalizedMessages);
     if (!userText) {
         throw new ValidationError("A user message is required");
     }
@@ -265,14 +276,14 @@ export async function streamSahayakChat(
 
     const contextMessages =
         conversation.summary &&
-        input.messages.length > RECENT_MESSAGE_WINDOW
-            ? input.messages.slice(-RECENT_MESSAGE_WINDOW)
-            : input.messages;
+        normalizedMessages.length > RECENT_MESSAGE_WINDOW
+            ? normalizedMessages.slice(-RECENT_MESSAGE_WINDOW)
+            : normalizedMessages;
 
     let webSearchResults: TavilySearchResponse | null = null;
 
     const stream = createUIMessageStream({
-        originalMessages: input.messages,
+        originalMessages: normalizedMessages,
         execute: async ({ writer }) => {
             const tools =
                 webSearchEnabled

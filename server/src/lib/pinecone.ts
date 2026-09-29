@@ -141,10 +141,21 @@ export async function deleteNamespaceVectors(
     namespaceKey: string,
     sourceId: string,
 ) {
-    const index = await getPineconeIndex();
-    await index.namespace(namespaceKey).deleteMany({
-        filter: { sourceId: { $eq: sourceId } },
-    });
+    try {
+        const index = await getPineconeIndex();
+        await index.namespace(namespaceKey).deleteMany({
+            filter: { sourceId: { $eq: sourceId } },
+        });
+    } catch (error: any) {
+        if (
+            error?.status === 404 ||
+            error?.name === "PineconeNotFoundError" ||
+            error?.message?.includes("404")
+        ) {
+            return;
+        }
+        throw error;
+    }
 }
 
 /** Alias for backward compatibility */
@@ -156,8 +167,19 @@ export const deleteSourceVectors = deleteNamespaceVectors;
  * @param namespaceKey - Pinecone namespace to wipe
  */
 export async function deleteNamespace(namespaceKey: string) {
-    const index = await getPineconeIndex();
-    await index.namespace(namespaceKey).deleteAll();
+    try {
+        const index = await getPineconeIndex();
+        await index.namespace(namespaceKey).deleteAll();
+    } catch (error: any) {
+        if (
+            error?.status === 404 ||
+            error?.name === "PineconeNotFoundError" ||
+            error?.message?.includes("404")
+        ) {
+            return;
+        }
+        throw error;
+    }
 }
 
 /** Alias for backward compatibility */

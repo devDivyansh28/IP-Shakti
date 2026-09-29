@@ -106,13 +106,18 @@ export async function searchUserMemories(userId: string, query: string) {
         return [];
     }
 
-    const results = await getMem0Client().search(query, {
-        filters: { user_id: userId },
-        topK: 8,
-        threshold: 0.1,
-    });
+    try {
+        const results = await getMem0Client().search(query, {
+            filters: { user_id: userId },
+            topK: 8,
+            threshold: 0.1,
+        });
 
-    return results.results.map(mapMemory);
+        return results.results.map(mapMemory);
+    } catch (error) {
+        console.warn("searchUserMemories fallback: unable to reach Mem0 service", error);
+        return [];
+    }
 }
 
 /**

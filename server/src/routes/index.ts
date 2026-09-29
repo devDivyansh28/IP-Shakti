@@ -20,9 +20,9 @@ export function registerRoutes(app: Express): void {
     app.use("/api/chat", requireAuth, chatRoutes);
 
     // Project-scoped routes
-    workspaceRoutes.use("/:workspaceId/sources", sourceRoutes);
-    workspaceRoutes.use("/:workspaceId/conversations", conversationRoutes);
-    workspaceRoutes.use("/:workspaceId/chat", chatRoutes);
+    app.use("/api/workspaces/:workspaceId/sources", requireAuth, sourceRoutes);
+    app.use("/api/workspaces/:workspaceId/conversations", requireAuth, conversationRoutes);
+    app.use("/api/workspaces/:workspaceId/chat", requireAuth, chatRoutes);
     app.use("/api/workspaces", workspaceRoutes);
 
     // User long-term memory

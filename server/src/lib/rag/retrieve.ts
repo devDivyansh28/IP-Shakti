@@ -50,9 +50,9 @@ export async function retrieveDualTierContext(params: {
     // Build metadata filter for Pinecone if specific jurisdiction requested
     let globalFilter: Record<string, unknown> | undefined;
     if (jurisdiction === "INDIA") {
-        globalFilter = { jurisdiction: { $in: ["INDIA", "GENERAL"] } };
+        globalFilter = { jurisdiction: { $in: ["INDIA", "IN", "NATIONAL", "GENERAL"] } };
     } else if (jurisdiction === "INTERNATIONAL") {
-        globalFilter = { jurisdiction: { $in: ["INTERNATIONAL", "GENERAL"] } };
+        globalFilter = { jurisdiction: { $in: ["INTERNATIONAL", "GLOBAL", "GENERAL"] } };
     }
 
     // Determine namespaces to query

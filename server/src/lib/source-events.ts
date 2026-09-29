@@ -17,8 +17,14 @@ export async function enqueueSourceProcessing(input: {
     sourceId: string;
     workspaceId?: string | null;
 }) {
-    await inngest.send({
-        name: "source/created",
-        data: input,
-    });
+    try {
+        await inngest.send({
+            name: "source/created",
+            data: input,
+        });
+    } catch (error) {
+        console.warn(
+            "Inngest dev notice: could not dispatch 'source/created' event (Inngest server offline). Source was saved in DB.",
+        );
+    }
 }

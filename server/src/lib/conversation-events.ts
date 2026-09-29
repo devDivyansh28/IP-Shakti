@@ -17,8 +17,14 @@ export async function enqueueConversationSummarize(input: {
     conversationId: string;
     userId: string;
 }) {
-    await inngest.send({
-        name: "conversation/summarize",
-        data: input,
-    });
+    try {
+        await inngest.send({
+            name: "conversation/summarize",
+            data: input,
+        });
+    } catch (error) {
+        console.warn(
+            "Inngest dev notice: could not dispatch 'conversation/summarize' event (Inngest server offline).",
+        );
+    }
 }

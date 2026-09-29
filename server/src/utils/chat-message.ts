@@ -8,11 +8,18 @@ import type { UIMessage } from "ai";
  * @returns Concatenated text from all `type: "text"` parts
  *
  */
-export function getTextFromUIMessage(message: UIMessage) {
-    return message.parts
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
-        .join("");
+export function getTextFromUIMessage(message: any): string {
+    if (!message) return "";
+    if (typeof message.content === "string" && message.content.length > 0) {
+        return message.content;
+    }
+    if (Array.isArray(message.parts)) {
+        return message.parts
+            .filter((part: any) => part && part.type === "text")
+            .map((part: any) => part.text ?? "")
+            .join("");
+    }
+    return "";
 }
 
 /**
