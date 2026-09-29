@@ -3,6 +3,7 @@ import prisma from "../lib/db.js";
 
 export const conversationSelect = {
     id: true,
+    userId: true,
     workspaceId: true,
     title: true,
     summary: true,
@@ -19,6 +20,22 @@ export type ConversationRecord = Prisma.ConversationGetPayload<{
 export function findConversationsByWorkspaceId(workspaceId: string) {
     return prisma.conversation.findMany({
         where: { workspaceId },
+        select: conversationSelect,
+        orderBy: { updatedAt: "desc" },
+    });
+}
+
+export function findConversationsByUserId(
+    userId: string,
+    workspaceId?: string | null,
+) {
+    const where: Prisma.ConversationWhereInput = {
+        userId,
+        workspaceId: workspaceId ?? null,
+    };
+
+    return prisma.conversation.findMany({
+        where,
         select: conversationSelect,
         orderBy: { updatedAt: "desc" },
     });
@@ -41,10 +58,45 @@ export function findConversationByIdAndWorkspaceId(
     });
 }
 
-export function createConversationRecord(workspaceId: string, title?: string) {
+export function findConversationByIdAndUser(
+    conversationId: string,
+    userId: string,
+    workspaceId?: string | null,
+) {
+    return prisma.conversation.findFirst({
+        where: {
+            id: conversationId,
+            OR: [
+                { userId },
+                ...(workspaceId ? [{ workspaceId }] : []),
+            ],
+        },
+        select: conversationSelect,
+    });
+}
+
+export function createConversationRecord(
+    workspaceIdOrOptions: string | null | {
+        userId: string;
+        workspaceId?: string | null;
+        title?: string | null;
+    },
+    title?: string,
+) {
+    if (typeof workspaceIdOrOptions === "object" && workspaceIdOrOptions !== null) {
+        return prisma.conversation.create({
+            data: {
+                userId: workspaceIdOrOptions.userId,
+                workspaceId: workspaceIdOrOptions.workspaceId ?? null,
+                title: workspaceIdOrOptions.title ?? null,
+            },
+            select: conversationSelect,
+        });
+    }
+
     return prisma.conversation.create({
         data: {
-            workspaceId,
+            workspaceId: workspaceIdOrOptions,
             title: title ?? null,
         },
         select: conversationSelect,

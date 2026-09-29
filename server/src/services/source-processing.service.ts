@@ -21,8 +21,10 @@ import { chunkPages, chunkText } from "../lib/chunking.js";
 import { embedTexts } from "../lib/openai.js";
 import { extractPdfFromCloudinary } from "../lib/pdf.js";
 import {
+    deleteNamespaceVectors,
     deleteSourceVectors,
     type VectorMetadata,
+    upsertNamespaceVectors,
     upsertSourceVectors,
 } from "../lib/pinecone.js";
 import {
@@ -234,12 +236,31 @@ export async function chunkSourceContent(
  *
  *
  */
+/**
+ * Resolves the target Pinecone namespace for a source.
+ * GLOBAL sources go to 'global'.
+ * Project sources go to 'project_<workspaceId>'.
+ * Normal user uploads go to 'user_<userId>'.
+ */
+export function getSourceNamespace(
+    source: Pick<SourceRecord, "scope" | "userId" | "workspaceId">,
+): string {
+    if (source.scope === "GLOBAL") {
+        return "global";
+    }
+    if (source.workspaceId) {
+        return `project_${source.workspaceId}`;
+    }
+    return `user_${source.userId ?? "default"}`;
+}
+
 export async function embedAndIndexSource(
     source: SourceRecord,
     chunks: SourceChunkRecord[],
 ) {
     const batchSize = 50;
     const records: PineconeRecord<VectorMetadata>[] = [];
+    const namespaceKey = getSourceNamespace(source);
 
     for (let i = 0; i < chunks.length; i += batchSize) {
         const batch = chunks.slice(i, i + batchSize);
@@ -259,12 +280,16 @@ export async function embedAndIndexSource(
                 id: chunk.id,
                 values: embedding,
                 metadata: {
-                    workspaceId: source.workspaceId,
+                    workspaceId: source.workspaceId ?? undefined,
+                    userId: source.userId ?? undefined,
                     sourceId: source.id,
                     chunkId: chunk.id,
                     chunkIndex: chunk.index,
                     sourceTitle: source.title,
                     sourceType: source.type,
+                    scope: source.scope,
+                    jurisdiction: source.jurisdiction ?? "INDIA",
+                    tags: source.tags ?? [],
                     text: chunk.content.slice(0, 35000),
                     ...(typeof chunkMetadata.page === "number"
                         ? { page: chunkMetadata.page }
@@ -274,7 +299,7 @@ export async function embedAndIndexSource(
         }
     }
 
-    await upsertSourceVectors(source.workspaceId, records);
+    await upsertNamespaceVectors(namespaceKey, records);
 
     const metadata =
         source.metadata &&
@@ -295,15 +320,20 @@ export async function embedAndIndexSource(
 }
 
 /**
- * Removes a source from the vector index and deletes its chunks from Postgres.
- * Used when a source is deleted or needs to be fully re-indexed from scratch.
- *
+ * Removes a source from its vector index namespace and deletes its chunks from Postgres.
  */
 export async function removeSourceFromIndex(
-    workspaceId: string,
     sourceId: string,
+    workspaceId?: string | null,
 ) {
-    await deleteSourceVectors(workspaceId, sourceId);
+    const source = await findSourceById(sourceId);
+    const namespaceKey = source
+        ? getSourceNamespace(source)
+        : workspaceId
+          ? `project_${workspaceId}`
+          : "global";
+
+    await deleteNamespaceVectors(namespaceKey, sourceId);
     await deleteChunksBySourceId(sourceId);
 }
 

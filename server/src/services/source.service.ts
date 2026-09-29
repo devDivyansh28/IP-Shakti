@@ -1,4 +1,4 @@
-import type { Prisma } from "../generated/prisma/client.js";
+import type { Prisma, SourceScope } from "../generated/prisma/client.js";
 import { uploadPdfToCloudinary } from "../lib/cloudinary.js";
 import { extractPdfFromBuffer } from "../lib/pdf.js";
 import { scrapeWebsite } from "../lib/firecrawl.js";
@@ -7,15 +7,21 @@ import { fetchYoutubeTranscript } from "../lib/youtube.js";
 import {
     createSourceRecord,
     deleteSourceRecord,
+    deleteSourcesBySourceIds,
+    findGlobalSources,
+    findSourceById,
+    findSourceByIdAndUserId,
     findSourceByIdAndWorkspaceId,
+    findSourcesByUserId,
     findSourcesByWorkspaceId,
     updateSourceRecord,
     type SourceRecord,
 } from "../repositories/source.repository.js";
 import { getWorkspaceByIdForUser } from "./workspace.service.js";
-import { NotFoundError } from "../types/app-error.js";
+import { NotFoundError, UnauthorizedError } from "../types/app-error.js";
 import type {
     CreateSourceInput,
+    ImportDatabaseInput,
     ImportWebsiteInput,
     ImportWebSearchInput,
     ImportYoutubeInput,
@@ -26,10 +32,6 @@ import { listChunksForSource, removeSourceFromIndex } from "./source-processing.
 
 /**
  * Persists a source row and enqueues the Inngest processing pipeline.
- *
- * @param data - Fields for the new source record
- * @returns Created source with status `PENDING`
- *
  */
 async function createAndProcessSource(
     data: Parameters<typeof createSourceRecord>[0],
@@ -38,74 +40,100 @@ async function createAndProcessSource(
 
     await enqueueSourceProcessing({
         sourceId: source.id,
-        workspaceId: source.workspaceId,
+        workspaceId: source.workspaceId ?? undefined,
     });
 
     return source;
 }
 
 /**
- * Lists sources in a workspace with optional search and filter query params.
- *
- * @param workspaceId - Workspace to list sources from
- * @param userId - Authenticated user's id
- * @param filters - Optional `q`, `type`, and `status` filters
- * @returns Matching source records
- *
+ * Lists Central / Global sources (admin-managed authoritative knowledge base).
  */
-export async function listSourcesForWorkspace(
-    workspaceId: string,
-    userId: string,
-    filters: ListSourcesQuery = {},
-) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
-    return findSourcesByWorkspaceId(workspaceId, filters);
+export async function listCentralSources(filters: ListSourcesQuery = {}) {
+    return findGlobalSources(filters);
 }
 
 /**
- * Loads a single source after verifying workspace ownership.
- *
- * @param workspaceId - Workspace the source belongs to
- * @param sourceId - Source to fetch
- * @param userId - Authenticated user's id
- * @returns Source record
- * @throws {NotFoundError} When the source does not exist in this workspace
- *
+ * Lists sources in a workspace or a user's normal private library.
  */
-export async function getSourceForWorkspace(
+export async function listSourcesForUser(
+    userId: string,
+    workspaceId?: string | null,
+    filters: ListSourcesQuery = {},
+) {
+    if (workspaceId) {
+        await getWorkspaceByIdForUser(workspaceId, userId);
+        return findSourcesByWorkspaceId(workspaceId, filters);
+    }
+    return findSourcesByUserId(userId, filters);
+}
+
+/**
+ * Alias for workspace-scoped source listing
+ */
+export const listSourcesForWorkspace = (
     workspaceId: string,
+    userId: string,
+    filters: ListSourcesQuery = {},
+) => listSourcesForUser(userId, workspaceId, filters);
+
+/**
+ * Loads a single source after verifying ownership or global access.
+ */
+export async function getSourceForUser(
     sourceId: string,
     userId: string,
+    workspaceId?: string | null,
 ): Promise<SourceRecord> {
-    await getWorkspaceByIdForUser(workspaceId, userId);
-
-    const source = await findSourceByIdAndWorkspaceId(sourceId, workspaceId);
+    const source = await findSourceById(sourceId);
 
     if (!source) {
         throw new NotFoundError("Source not found");
     }
 
-    return source;
+    if (source.scope === "GLOBAL") {
+        return source;
+    }
+
+    if (workspaceId && source.workspaceId === workspaceId) {
+        await getWorkspaceByIdForUser(workspaceId, userId);
+        return source;
+    }
+
+    if (source.userId === userId) {
+        return source;
+    }
+
+    throw new NotFoundError("Source not found");
 }
 
+export const getSourceForWorkspace = (
+    workspaceId: string,
+    sourceId: string,
+    userId: string,
+) => getSourceForUser(sourceId, userId, workspaceId);
+
 /**
- * Creates a plain-text or markdown source and queues it for RAG indexing.
- *
- * @param workspaceId - Workspace to attach the source to
- * @param userId - Authenticated user's id
- * @param input - Source type, title, and raw content
- * @returns New source with status `PENDING`
- *
+ * Creates a plain-text or markdown source (Central Global or User Private).
  */
 export async function createTextOrMarkdownSource(
-    workspaceId: string,
     userId: string,
     input: CreateSourceInput,
+    options?: {
+        workspaceId?: string | null;
+        scope?: SourceScope;
+    },
 ) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
+    if (options?.workspaceId) {
+        await getWorkspaceByIdForUser(options.workspaceId, userId);
+    }
 
     return createAndProcessSource({
-        workspaceId,
+        workspaceId: options?.workspaceId ?? null,
+        userId,
+        scope: options?.scope ?? (options?.workspaceId ? "PRIVATE" : "GLOBAL"),
+        jurisdiction: input.jurisdiction ?? "INDIA",
+        tags: input.tags ?? [],
         type: input.type,
         title: input.title,
         content: input.content,
@@ -114,24 +142,22 @@ export async function createTextOrMarkdownSource(
 }
 
 /**
- * Uploads a PDF to Cloudinary, optionally extracts text, and queues processing.
- *
- * Text extraction at upload time is best-effort; Inngest retries from Cloudinary if it fails.
- *
- * @param workspaceId - Workspace to attach the source to
- * @param userId - Authenticated user's id
- * @param file - Multer file buffer from the upload endpoint
- * @param title - Optional custom title (defaults to filename without `.pdf`)
- * @returns New PDF source with Cloudinary metadata and status `PENDING`
- *
+ * Uploads a PDF to Cloudinary and queues processing.
  */
 export async function uploadPdfSource(
-    workspaceId: string,
     userId: string,
     file: Express.Multer.File,
-    title?: string,
+    options?: {
+        workspaceId?: string | null;
+        scope?: SourceScope;
+        title?: string;
+        jurisdiction?: string;
+        tags?: string[];
+    },
 ) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
+    if (options?.workspaceId) {
+        await getWorkspaceByIdForUser(options.workspaceId, userId);
+    }
 
     const upload = await uploadPdfToCloudinary(
         file.buffer,
@@ -150,9 +176,13 @@ export async function uploadPdfSource(
     }
 
     return createAndProcessSource({
-        workspaceId,
+        workspaceId: options?.workspaceId ?? null,
+        userId,
+        scope: options?.scope ?? (options?.workspaceId ? "PRIVATE" : "GLOBAL"),
+        jurisdiction: options?.jurisdiction ?? "INDIA",
+        tags: options?.tags ?? [],
         type: "PDF",
-        title: title?.trim() || file.originalname.replace(/\.pdf$/i, ""),
+        title: options?.title?.trim() || file.originalname.replace(/\.pdf$/i, ""),
         content,
         status: "PENDING",
         metadata: {
@@ -167,25 +197,28 @@ export async function uploadPdfSource(
 }
 
 /**
- * Scrapes a website via Firecrawl and creates a source from the markdown content.
- *
- * @param workspaceId - Workspace to attach the source to
- * @param userId - Authenticated user's id
- * @param input - URL and optional custom title
- * @returns New WEBSITE source with scraped markdown and status `PENDING`
- *
+ * Scrapes a website via Firecrawl and creates a source.
  */
 export async function importWebsiteSource(
-    workspaceId: string,
     userId: string,
     input: ImportWebsiteInput,
+    options?: {
+        workspaceId?: string | null;
+        scope?: SourceScope;
+    },
 ) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
+    if (options?.workspaceId) {
+        await getWorkspaceByIdForUser(options.workspaceId, userId);
+    }
 
     const scraped = await scrapeWebsite(input.url);
 
     return createAndProcessSource({
-        workspaceId,
+        workspaceId: options?.workspaceId ?? null,
+        userId,
+        scope: options?.scope ?? (options?.workspaceId ? "PRIVATE" : "GLOBAL"),
+        jurisdiction: input.jurisdiction ?? "INDIA",
+        tags: input.tags ?? [],
         type: "WEBSITE",
         title: input.title || scraped.title || input.url,
         content: scraped.markdown,
@@ -198,25 +231,28 @@ export async function importWebsiteSource(
 }
 
 /**
- * Fetches a YouTube transcript and creates a source from the caption text.
- *
- * @param workspaceId - Workspace to attach the source to
- * @param userId - Authenticated user's id
- * @param input - YouTube URL and optional custom title
- * @returns New YOUTUBE source with transcript content and status `PENDING`
- *
+ * Fetches a YouTube transcript and creates a source.
  */
 export async function importYoutubeSource(
-    workspaceId: string,
     userId: string,
     input: ImportYoutubeInput,
+    options?: {
+        workspaceId?: string | null;
+        scope?: SourceScope;
+    },
 ) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
+    if (options?.workspaceId) {
+        await getWorkspaceByIdForUser(options.workspaceId, userId);
+    }
 
     const transcript = await fetchYoutubeTranscript(input.url);
 
     return createAndProcessSource({
-        workspaceId,
+        workspaceId: options?.workspaceId ?? null,
+        userId,
+        scope: options?.scope ?? (options?.workspaceId ? "PRIVATE" : "GLOBAL"),
+        jurisdiction: input.jurisdiction ?? "INDIA",
+        tags: input.tags ?? [],
         type: "YOUTUBE",
         title: input.title || `YouTube: ${transcript.videoId}`,
         content: transcript.content,
@@ -229,51 +265,96 @@ export async function importYoutubeSource(
 }
 
 /**
- * Deletes a source, its Pinecone vectors, and its Postgres chunks.
- *
- * @param workspaceId - Workspace the source belongs to
- * @param sourceId - Source to delete
- * @param userId - Authenticated user's id
- * @returns Resolves when the source row is deleted
- * @throws {NotFoundError} When the source is not found
- *
+ * Ingests structured database / TKDL records and queues processing.
  */
-export async function deleteSourceForWorkspace(
-    workspaceId: string,
+export async function importDatabaseSource(
+    userId: string,
+    input: ImportDatabaseInput,
+    options?: {
+        workspaceId?: string | null;
+        scope?: SourceScope;
+    },
+) {
+    if (options?.workspaceId) {
+        await getWorkspaceByIdForUser(options.workspaceId, userId);
+    }
+
+    const combinedContent = input.records
+        .map((record, index) => {
+            const header = `=== RECORD ${index + 1}: ${record.title} ===`;
+            return `${header}\n${record.content}`;
+        })
+        .join("\n\n---\n\n");
+
+    return createAndProcessSource({
+        workspaceId: options?.workspaceId ?? null,
+        userId,
+        scope: options?.scope ?? "GLOBAL",
+        jurisdiction: input.jurisdiction ?? "INDIA",
+        tags: input.tags ?? ["TKDL", "DATABASE"],
+        type: "DATABASE",
+        title: input.title,
+        content: combinedContent,
+        status: "PENDING",
+        metadata: {
+            totalRecords: input.records.length,
+            importedAt: new Date().toISOString(),
+        },
+    });
+}
+
+/**
+ * Deletes a source, its vectors, and its chunks.
+ */
+export async function deleteSourceForUser(
     sourceId: string,
     userId: string,
+    workspaceId?: string | null,
+    isAdmin = false,
 ) {
-    await getSourceForWorkspace(workspaceId, sourceId, userId);
-    await removeSourceFromIndex(workspaceId, sourceId);
+    const source = await findSourceById(sourceId);
+    if (!source) {
+        throw new NotFoundError("Source not found");
+    }
+
+    if (!isAdmin && source.scope === "GLOBAL") {
+        throw new UnauthorizedError("Cannot delete central knowledge base sources");
+    }
+
+    if (!isAdmin && source.userId && source.userId !== userId) {
+        throw new UnauthorizedError("You do not own this source");
+    }
+
+    await removeSourceFromIndex(sourceId, workspaceId ?? source.workspaceId);
     await deleteSourceRecord(sourceId);
 }
 
-/**
- * Returns indexed chunks for a source (debugging / admin UI).
- *
- * @param workspaceId - Workspace the source belongs to
- * @param sourceId - Source whose chunks to list
- * @param userId - Authenticated user's id
- * @returns Chunk rows and total count
- *
- */
-export async function getSourceChunksForWorkspace(
+export const deleteSourceForWorkspace = (
     workspaceId: string,
     sourceId: string,
     userId: string,
+) => deleteSourceForUser(sourceId, userId, workspaceId);
+
+/**
+ * Returns indexed chunks for a source.
+ */
+export async function getSourceChunksForUser(
+    sourceId: string,
+    userId: string,
+    workspaceId?: string | null,
 ) {
-    await getSourceForWorkspace(workspaceId, sourceId, userId);
+    await getSourceForUser(sourceId, userId, workspaceId);
     return listChunksForSource(sourceId);
 }
 
+export const getSourceChunksForWorkspace = (
+    workspaceId: string,
+    sourceId: string,
+    userId: string,
+) => getSourceChunksForUser(sourceId, userId, workspaceId);
+
 /**
- * Deletes multiple sources in sequence.
- *
- * @param workspaceId - Workspace containing the sources
- * @param userId - Authenticated user's id
- * @param sourceIds - Array of source ids to delete
- * @returns Resolves when all sources are deleted
- *
+ * Bulk deletes sources.
  */
 export async function bulkDeleteSourcesForWorkspace(
     workspaceId: string,
@@ -283,22 +364,14 @@ export async function bulkDeleteSourcesForWorkspace(
     await getWorkspaceByIdForUser(workspaceId, userId);
 
     for (const sourceId of sourceIds) {
-        await deleteSourceForWorkspace(workspaceId, sourceId, userId);
+        await removeSourceFromIndex(sourceId, workspaceId);
     }
+
+    await deleteSourcesBySourceIds(sourceIds);
 }
 
 /**
- * Re-queues failed sources for re-processing.
- *
- * When `sourceIds` is omitted, all `FAILED` sources in the workspace are reprocessed.
- * When provided, only failed sources whose id is in the list are reprocessed.
- *
- * @param workspaceId - Workspace containing the sources
- * @param userId - Authenticated user's id
- * @param input - Optional subset of source ids to reprocess
- * @returns Count of sources that were requeued
- *
- *
+ * Reprocesses sources.
  */
 export async function reprocessSourcesForWorkspace(
     workspaceId: string,
@@ -324,13 +397,6 @@ export async function reprocessSourcesForWorkspace(
 
 /**
  * Clears vectors/chunks and re-queues a single source for full re-indexing.
- *
- * @param workspaceId - Workspace the source belongs to
- * @param sourceId - Source to reprocess
- * @param userId - Authenticated user's id
- * @returns Resolves when the source is reset to `PENDING` and re-enqueued
- * @throws {NotFoundError} When the source is not found
- *
  */
 export async function reprocessSourceForWorkspace(
     workspaceId: string,
@@ -339,7 +405,7 @@ export async function reprocessSourceForWorkspace(
 ) {
     const source = await getSourceForWorkspace(workspaceId, sourceId, userId);
 
-    await removeSourceFromIndex(workspaceId, sourceId);
+    await removeSourceFromIndex(sourceId, workspaceId);
 
     const metadata =
         source.metadata &&
@@ -348,7 +414,7 @@ export async function reprocessSourceForWorkspace(
             ? { ...(source.metadata as Record<string, unknown>) }
             : {};
 
-    delete metadata.processingError;
+    delete (metadata as Record<string, unknown>).processingError;
 
     await updateSourceRecord(sourceId, {
         status: "PENDING",
@@ -359,25 +425,26 @@ export async function reprocessSourceForWorkspace(
 }
 
 /**
- * Saves web search results (from Tavily) as a WEBSITE source for RAG indexing.
- *
- * Used when the user chooses to add a web search result to their workspace sources.
- *
- * @param workspaceId - Workspace to attach the source to
- * @param userId - Authenticated user's id
- * @param input - Title, scraped content, and source URL from search
- * @returns New WEBSITE source with status `PENDING`
- *
+ * Saves web search results as a WEBSITE source.
  */
 export async function importWebSearchSource(
-    workspaceId: string,
     userId: string,
     input: ImportWebSearchInput,
+    options?: {
+        workspaceId?: string | null;
+        scope?: SourceScope;
+    },
 ) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
+    if (options?.workspaceId) {
+        await getWorkspaceByIdForUser(options.workspaceId, userId);
+    }
 
     return createAndProcessSource({
-        workspaceId,
+        workspaceId: options?.workspaceId ?? null,
+        userId,
+        scope: options?.scope ?? (options?.workspaceId ? "PRIVATE" : "GLOBAL"),
+        jurisdiction: input.jurisdiction ?? "INDIA",
+        tags: input.tags ?? ["web-search"],
         type: "WEBSITE",
         title: input.title,
         content: input.content,

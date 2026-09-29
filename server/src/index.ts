@@ -23,7 +23,7 @@ app.all("/api/auth/{*any}", toNodeHandler(auth));
 app.use(express.json());
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.get("/", (_req, res) => {
-    res.json({ message: "Hello from Chaibook API" });
+    res.json({ message: "Hello from IP-SAKTI Sahayak API" });
 });
 
 app.get("/health", (_req, res) => {

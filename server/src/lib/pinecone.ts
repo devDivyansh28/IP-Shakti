@@ -5,7 +5,7 @@ import {
 } from "@pinecone-database/pinecone";
 import { EMBEDDING_DIMENSIONS } from "./openai.js";
 
-const indexName = process.env.PINECONE_INDEX ?? "chaibook";
+const indexName = process.env.PINECONE_INDEX ?? "ipshakti";
 
 let pineconeClient: Pinecone | null = null;
 let indexReady = false;
@@ -51,7 +51,6 @@ async function waitForIndexReady(name: string) {
  * Ensures the Pinecone index exists and is ready (creates it on first run if missing).
  *
  * @returns Resolves when the index is available
- *
  */
 export async function ensurePineconeIndex() {
     if (indexReady) {
@@ -84,35 +83,36 @@ export async function ensurePineconeIndex() {
  * Returns the configured Pinecone index handle.
  *
  * @returns Pinecone `Index` instance
- *
  */
 export async function getPineconeIndex(): Promise<Index> {
     await ensurePineconeIndex();
-    return getPineconeClient().index({name:indexName});
+    return getPineconeClient().index({ name: indexName });
 }
 
-/** Metadata stored on each Pinecone vector for RAG retrieval and citations. */
+/** Metadata stored on each Pinecone vector for IP-SAKTI RAG retrieval and citations. */
 export type VectorMetadata = {
-    workspaceId: string;
+    workspaceId?: string;
+    userId?: string;
     sourceId: string;
     chunkId: string;
     chunkIndex: number;
     sourceTitle: string;
     sourceType: string;
+    scope: "GLOBAL" | "PRIVATE";
+    jurisdiction?: string;
+    tags?: string[];
     text: string;
     page?: number;
 };
 
 /**
- * Upserts source chunk vectors into a workspace namespace in batches of 100.
+ * Upserts source chunk vectors into a target namespace in batches of 100.
  *
- * @param workspaceId - Pinecone namespace (one per workspace)
+ * @param namespaceKey - Pinecone namespace ('global', 'user_<id>', or 'project_<id>')
  * @param records - Vector records with embeddings and metadata
- * @returns Resolves immediately when `records` is empty
- *
  */
-export async function upsertSourceVectors(
-    workspaceId: string,
+export async function upsertNamespaceVectors(
+    namespaceKey: string,
     records: PineconeRecord<VectorMetadata>[],
 ) {
     if (records.length === 0) {
@@ -120,7 +120,7 @@ export async function upsertSourceVectors(
     }
 
     const index = await getPineconeIndex();
-    const namespace = index.namespace(workspaceId);
+    const namespace = index.namespace(namespaceKey);
 
     const batchSize = 100;
     for (let i = 0; i < records.length; i += batchSize) {
@@ -128,60 +128,71 @@ export async function upsertSourceVectors(
     }
 }
 
+/** Alias for backward compatibility */
+export const upsertSourceVectors = upsertNamespaceVectors;
+
 /**
- * Deletes all vectors belonging to a source within a workspace namespace.
+ * Deletes all vectors belonging to a source within a namespace.
  *
- * @param workspaceId - Pinecone namespace
+ * @param namespaceKey - Pinecone namespace
  * @param sourceId - Source whose vectors should be removed
- * @returns Resolves when deletion completes
- *
  */
-export async function deleteSourceVectors(
-    workspaceId: string,
+export async function deleteNamespaceVectors(
+    namespaceKey: string,
     sourceId: string,
 ) {
     const index = await getPineconeIndex();
-    await index.namespace(workspaceId).deleteMany({
+    await index.namespace(namespaceKey).deleteMany({
         filter: { sourceId: { $eq: sourceId } },
     });
 }
 
-/**
- * Deletes an entire workspace namespace (all vectors for that workspace).
- *
- * Called when a workspace is deleted.
- *
- * @param workspaceId - Pinecone namespace to wipe
- * @returns Resolves when all vectors in the namespace are deleted
- *
- */
-export async function deleteWorkspaceVectors(workspaceId: string) {
-    const index = await getPineconeIndex();
-    await index.namespace(workspaceId).deleteAll();
-}
+/** Alias for backward compatibility */
+export const deleteSourceVectors = deleteNamespaceVectors;
 
 /**
- * Queries a workspace namespace for the most similar vectors to a query embedding.
+ * Deletes an entire namespace.
  *
- * @param workspaceId - Pinecone namespace to search
+ * @param namespaceKey - Pinecone namespace to wipe
+ */
+export async function deleteNamespace(namespaceKey: string) {
+    const index = await getPineconeIndex();
+    await index.namespace(namespaceKey).deleteAll();
+}
+
+/** Alias for backward compatibility */
+export const deleteWorkspaceVectors = deleteNamespace;
+
+/**
+ * Queries a namespace for the most similar vectors to a query embedding with optional filtering.
+ *
+ * @param namespaceKey - Pinecone namespace to search ('global', 'user_<id>', etc.)
  * @param vector - Query embedding (1536 dimensions)
  * @param topK - Maximum number of matches to return
- * @returns Pinecone match objects with scores and metadata
- *
+ * @param filter - Optional metadata filter (e.g. jurisdiction or scope)
  */
-export async function queryWorkspaceVectors(
-    workspaceId: string,
+export async function queryNamespaceVectors(
+    namespaceKey: string,
     vector: number[],
     topK: number,
+    filter?: Record<string, unknown>,
 ) {
     const index = await getPineconeIndex();
-    const result = await index.namespace(workspaceId).query({
+    const result = await index.namespace(namespaceKey).query({
         vector,
         topK,
         includeMetadata: true,
+        filter: filter as Record<string, unknown> | undefined,
     });
 
     return result.matches ?? [];
 }
+
+/** Alias for backward compatibility */
+export const queryWorkspaceVectors = (
+    namespaceKey: string,
+    vector: number[],
+    topK: number,
+) => queryNamespaceVectors(namespaceKey, vector, topK);
 
 export { indexName as PINECONE_INDEX_NAME };

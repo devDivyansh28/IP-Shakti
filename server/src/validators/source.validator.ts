@@ -6,6 +6,11 @@ export const sourceTypeSchema = z.enum([
     "YOUTUBE",
     "TEXT",
     "MARKDOWN",
+    "STATUTE",
+    "TREATY",
+    "CASE_LAW",
+    "REGULATION",
+    "DATABASE",
 ]);
 
 export const sourceStatusSchema = z.enum([
@@ -15,12 +20,21 @@ export const sourceStatusSchema = z.enum([
     "FAILED",
 ]);
 
+export const sourceScopeSchema = z.enum([
+    "GLOBAL",
+    "PRIVATE",
+]);
+
 export const workspaceIdParamSchema = z.object({
     workspaceId: z.string().trim().min(1),
 });
 
+export const optionalWorkspaceIdParamSchema = z.object({
+    workspaceId: z.string().trim().optional(),
+});
+
 export const sourceIdParamSchema = z.object({
-    workspaceId: z.string().trim().min(1),
+    workspaceId: z.string().trim().optional(),
     sourceId: z.string().trim().min(1),
 });
 
@@ -28,18 +42,24 @@ export const listSourcesQuerySchema = z.object({
     q: z.string().trim().optional(),
     type: sourceTypeSchema.optional(),
     status: sourceStatusSchema.optional(),
+    jurisdiction: z.string().trim().optional(),
+    scope: sourceScopeSchema.optional(),
 });
 
 export const createTextSourceSchema = z.object({
     type: z.literal("TEXT"),
     title: z.string().trim().min(1, "Title is required").max(200),
     content: z.string().trim().min(1, "Content is required"),
+    jurisdiction: z.string().trim().optional().default("INDIA"),
+    tags: z.array(z.string().trim()).optional().default([]),
 });
 
 export const createMarkdownSourceSchema = z.object({
     type: z.literal("MARKDOWN"),
     title: z.string().trim().min(1, "Title is required").max(200),
     content: z.string().trim().min(1, "Content is required"),
+    jurisdiction: z.string().trim().optional().default("INDIA"),
+    tags: z.array(z.string().trim()).optional().default([]),
 });
 
 export const createSourceSchema = z.discriminatedUnion("type", [
@@ -50,11 +70,15 @@ export const createSourceSchema = z.discriminatedUnion("type", [
 export const importWebsiteSchema = z.object({
     url: z.string().trim().url("Enter a valid URL"),
     title: z.string().trim().max(200).optional(),
+    jurisdiction: z.string().trim().optional().default("INDIA"),
+    tags: z.array(z.string().trim()).optional().default([]),
 });
 
 export const importYoutubeSchema = z.object({
     url: z.string().trim().min(1, "YouTube URL is required"),
     title: z.string().trim().max(200).optional(),
+    jurisdiction: z.string().trim().optional().default("INDIA"),
+    tags: z.array(z.string().trim()).optional().default([]),
 });
 
 export const bulkDeleteSourcesSchema = z.object({
@@ -69,6 +93,23 @@ export const importWebSearchSchema = z.object({
     title: z.string().trim().min(1).max(200),
     content: z.string().trim().min(1),
     url: z.string().trim().url(),
+    jurisdiction: z.string().trim().optional().default("INDIA"),
+    tags: z.array(z.string().trim()).optional().default([]),
+});
+
+export const importDatabaseSchema = z.object({
+    title: z.string().trim().min(1).max(200),
+    records: z.array(
+        z.object({
+            id: z.string().optional(),
+            title: z.string(),
+            content: z.string(),
+            tags: z.array(z.string()).optional(),
+            metadata: z.record(z.string(), z.unknown()).optional(),
+        }),
+    ).min(1),
+    jurisdiction: z.string().trim().optional().default("INDIA"),
+    tags: z.array(z.string().trim()).optional().default([]),
 });
 
 export type CreateSourceInput = z.infer<typeof createSourceSchema>;
@@ -78,3 +119,4 @@ export type ImportYoutubeInput = z.infer<typeof importYoutubeSchema>;
 export type BulkDeleteSourcesInput = z.infer<typeof bulkDeleteSourcesSchema>;
 export type ReprocessSourcesInput = z.infer<typeof reprocessSourcesSchema>;
 export type ImportWebSearchInput = z.infer<typeof importWebSearchSchema>;
+export type ImportDatabaseInput = z.infer<typeof importDatabaseSchema>;

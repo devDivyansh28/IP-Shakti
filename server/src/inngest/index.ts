@@ -8,7 +8,6 @@ import {
 } from "../services/source-processing.service.js";
 import { findSourceById } from "../repositories/source.repository.js";
 import { findChunksBySourceId } from "../repositories/source-chunk.repository.js";
-import { processArtifactById } from "../services/artifact.service.js";
 import { summarizeConversationById } from "../services/conversation-memory.service.js";
 
 export const processSource = inngest.createFunction(
@@ -60,21 +59,6 @@ export const processSource = inngest.createFunction(
     },
 );
 
-export const generateArtifact = inngest.createFunction(
-    {
-        id: "generate-artifact",
-        retries: 2,
-        triggers: [{ event: "artifact/generate" }],
-    },
-    async ({ event, step }) => {
-        const { artifactId } = event.data;
-
-        await step.run("generate", () => processArtifactById(artifactId));
-
-        return { artifactId, status: "READY" };
-    },
-);
-
 export const summarizeConversation = inngest.createFunction(
     {
         id: "summarize-conversation",
@@ -92,4 +76,4 @@ export const summarizeConversation = inngest.createFunction(
     },
 );
 
-export const functions = [processSource, generateArtifact, summarizeConversation];
+export const functions = [processSource, summarizeConversation];

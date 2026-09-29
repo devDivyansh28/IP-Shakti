@@ -1,16 +1,12 @@
 /**
- * Chat and conversation business logic.
+ * IP-SAKTI Sahayak: Chat & Conversational RAG pipeline.
  *
- * Handles CRUD for conversations/messages and the main RAG chat streaming pipeline:
- *
- * ```
- * User message
- *   → save to DB
- *   → RAG retrieval + Mem0 memories
- *   → streamText (AI SDK) with optional web search tool
- *   → save assistant reply + citations
- *   → optional summary job + Mem0 learning
- * ```
+ * Supports:
+ * - Normal Chat (universal, zero-project required)
+ * - Project Chat (scoped to specific workspace)
+ * - Dual-Tier RAG retrieval across Central Knowledge Base & User Documents
+ * - Explicit Jurisdiction Switching (INDIA, INTERNATIONAL, BOTH)
+ * - Real-time AI SDK streaming with rich source citations and optional web search
  */
 
 import { openai } from "@ai-sdk/openai";
@@ -35,11 +31,13 @@ import {
 import { enqueueConversationSummarize } from "../lib/conversation-events.js";
 import {
     buildChatSystemPrompt,
-    retrieveWorkspaceContext,
+    retrieveDualTierContext,
+    type JurisdictionMode,
 } from "../lib/rag/retrieve.js";
 import {
     createConversationRecord,
-    findConversationByIdAndWorkspaceId,
+    findConversationByIdAndUser,
+    findConversationsByUserId,
     findConversationsByWorkspaceId,
     touchConversation,
     updateConversationRecord,
@@ -65,61 +63,55 @@ import {
 import { getWorkspaceByIdForUser } from "./workspace.service.js";
 
 /**
- * Lists all conversations in a workspace for the sidebar/history UI.
- *
- * @param workspaceId - Workspace to list conversations from
- * @param userId - Authenticated user's id
- * @returns Conversation records ordered by most recent activity
- *
+ * Lists conversations for a user (either general or project-scoped).
  */
-export async function listConversationsForWorkspace(
-    workspaceId: string,
+export async function listConversationsForUser(
     userId: string,
+    workspaceId?: string | null,
 ) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
-    return findConversationsByWorkspaceId(workspaceId);
+    if (workspaceId) {
+        await getWorkspaceByIdForUser(workspaceId, userId);
+        return findConversationsByWorkspaceId(workspaceId);
+    }
+    return findConversationsByUserId(userId, null);
 }
 
+export const listConversationsForWorkspace = (
+    workspaceId: string,
+    userId: string,
+) => listConversationsForUser(userId, workspaceId);
+
 /**
- * Creates an empty conversation (optional title).
- *
- * Most chats are created implicitly on first message via {@link streamWorkspaceChat};
- * this endpoint supports explicit "new chat" actions from the UI.
- *
- * @param workspaceId - Workspace to attach the conversation to
- * @param userId - Authenticated user's id
- * @param title - Optional display title
- * @returns New conversation record
- *
+ * Creates an empty conversation thread.
  */
-export async function createConversationForWorkspace(
+export async function createConversationForUser(
+    userId: string,
+    workspaceId?: string | null,
+    title?: string,
+) {
+    if (workspaceId) {
+        await getWorkspaceByIdForUser(workspaceId, userId);
+    }
+    return createConversationRecord({ userId, workspaceId, title });
+}
+
+export const createConversationForWorkspace = (
     workspaceId: string,
     userId: string,
     title?: string,
-) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
-    return createConversationRecord(workspaceId, title);
-}
+) => createConversationForUser(userId, workspaceId, title);
 
 /**
- * Loads persisted message history for a conversation.
- *
- * @param workspaceId - Workspace the conversation belongs to
- * @param conversationId - Conversation to load messages for
- * @param userId - Authenticated user's id
- * @returns Message rows with role, content, citations, and timestamps
- * @throws {NotFoundError} When the conversation does not exist in this workspace
- *
+ * Loads messages for a conversation.
  */
-export async function getConversationMessagesForWorkspace(
-    workspaceId: string,
+export async function getConversationMessagesForUser(
     conversationId: string,
     userId: string,
+    workspaceId?: string | null,
 ) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
-
-    const conversation = await findConversationByIdAndWorkspaceId(
+    const conversation = await findConversationByIdAndUser(
         conversationId,
+        userId,
         workspaceId,
     );
 
@@ -130,25 +122,23 @@ export async function getConversationMessagesForWorkspace(
     return findMessagesByConversationId(conversationId);
 }
 
-/**
- * Deletes a conversation and all its messages (cascade).
- *
- * @param workspaceId - Workspace the conversation belongs to
- * @param conversationId - Conversation to delete
- * @param userId - Authenticated user's id
- * @returns Resolves when the conversation row is deleted
- * @throws {NotFoundError} When the conversation does not exist
- *
- */
-export async function deleteConversationForWorkspace(
+export const getConversationMessagesForWorkspace = (
     workspaceId: string,
     conversationId: string,
     userId: string,
-) {
-    await getWorkspaceByIdForUser(workspaceId, userId);
+) => getConversationMessagesForUser(conversationId, userId, workspaceId);
 
-    const conversation = await findConversationByIdAndWorkspaceId(
+/**
+ * Deletes a conversation and its messages.
+ */
+export async function deleteConversationForUser(
+    conversationId: string,
+    userId: string,
+    workspaceId?: string | null,
+) {
+    const conversation = await findConversationByIdAndUser(
         conversationId,
+        userId,
         workspaceId,
     );
 
@@ -159,25 +149,25 @@ export async function deleteConversationForWorkspace(
     await deleteConversationRecord(conversationId);
 }
 
+export const deleteConversationForWorkspace = (
+    workspaceId: string,
+    conversationId: string,
+    userId: string,
+) => deleteConversationForUser(conversationId, userId, workspaceId);
+
 /**
- * Finds an existing conversation or creates one from the first user message.
- *
- * @param workspaceId - Workspace scope
- * @param conversationId - Existing id from client, or undefined for a new chat
- * @param firstMessage - User text used to auto-generate a title for new conversations
- * @returns Conversation record (existing or newly created)
- * @throws {NotFoundError} When `conversationId` is provided but not found
- *
- *
+ * Finds an existing conversation or creates one on first message.
  */
 async function resolveConversation(
-    workspaceId: string,
+    userId: string,
+    workspaceId: string | null | undefined,
     conversationId: string | undefined,
     firstMessage: string,
 ) {
     if (conversationId) {
-        const existing = await findConversationByIdAndWorkspaceId(
+        const existing = await findConversationByIdAndUser(
             conversationId,
+            userId,
             workspaceId,
         );
 
@@ -188,45 +178,36 @@ async function resolveConversation(
         return existing;
     }
 
-    return createConversationRecord(
-        workspaceId,
-        buildConversationTitle(firstMessage),
-    );
+    return createConversationRecord({
+        userId,
+        workspaceId: workspaceId ?? null,
+        title: buildConversationTitle(firstMessage),
+    });
 }
 
 /**
- * Main RAG chat endpoint: streams an AI reply with workspace context and optional web search.
- *
- * **Pipeline:**
- * 1. Validate user message and resolve/create conversation
- * 2. Save user message to Postgres
- * 3. Parallel: Pinecone RAG retrieval + Mem0 memory search
- * 4. Build system prompt and stream model response via AI SDK
- * 5. On finish: save assistant message, citations, title, summary job, Mem0 learning
- *
- * @param res - Express response (streamed via `pipeUIMessageStreamToResponse`)
- * @param workspaceId - Workspace whose sources to search
- * @param userId - Authenticated user's id
- * @param input - Client chat payload from `useChat`
- * @returns Writes UI message stream to `res`; sets `X-Conversation-Id` header
- * @throws {ValidationError} When no user message text is present
- * @throws {NotFoundError} When conversation or workspace is not found
- *
- *
+ * Main IP-SAKTI Sahayak RAG streaming chat handler.
  */
-export async function streamWorkspaceChat(
+export async function streamSahayakChat(
     res: Response,
-    workspaceId: string,
     userId: string,
     input: {
         conversationId?: string;
         messages: UIMessage[];
         model?: string;
         webSearch?: boolean;
+        jurisdiction?: JurisdictionMode;
     },
+    workspaceId?: string | null,
 ) {
-    const workspace = await getWorkspaceByIdForUser(workspaceId, userId);
-    const requestedModel = input.model ?? workspace.defaultModel;
+    let defaultModel = CHAT_MODEL;
+
+    if (workspaceId) {
+        const workspace = await getWorkspaceByIdForUser(workspaceId, userId);
+        defaultModel = workspace.defaultModel;
+    }
+
+    const requestedModel = input.model ?? defaultModel;
     const chatModel =
         CHAT_MODELS.find((model) => model === requestedModel) ?? CHAT_MODEL;
     const webSearchEnabled =
@@ -238,6 +219,7 @@ export async function streamWorkspaceChat(
     }
 
     const conversation = await resolveConversation(
+        userId,
         workspaceId,
         input.conversationId,
         userText,
@@ -250,7 +232,12 @@ export async function streamWorkspaceChat(
     });
 
     const [retrievedChunks, userMemories] = await Promise.all([
-        retrieveWorkspaceContext(workspaceId, userText),
+        retrieveDualTierContext({
+            userId,
+            workspaceId,
+            query: userText,
+            jurisdiction: input.jurisdiction ?? "BOTH",
+        }),
         searchUserMemories(userId, userText),
     ]);
 
@@ -258,17 +245,22 @@ export async function streamWorkspaceChat(
         sourceId: chunk.sourceId,
         sourceTitle: chunk.sourceTitle,
         sourceType: chunk.sourceType,
+        scope: chunk.scope,
+        jurisdiction: chunk.jurisdiction,
+        tags: chunk.tags,
         chunkId: chunk.chunkId,
         chunkIndex: chunk.chunkIndex,
         page: chunk.page,
         excerpt: chunk.text.slice(0, 280),
         score: chunk.score,
     }));
+
     const systemPrompt = buildChatSystemPrompt({
         chunks: retrievedChunks,
         conversationSummary: conversation.summary,
         userMemories: userMemories.map((memory) => memory.memory),
         webSearchEnabled,
+        jurisdiction: input.jurisdiction ?? "BOTH",
     });
 
     const contextMessages =
@@ -287,12 +279,12 @@ export async function streamWorkspaceChat(
                     ? {
                           web_search: tool({
                               description:
-                                  "Search the web for up-to-date information outside the workspace sources.",
+                                  "Search the web for up-to-date patent gazettes, AYUSH notifications, and legal updates outside the knowledge base.",
                               inputSchema: z.object({
                                   query: z
                                       .string()
                                       .describe(
-                                          "The search query for current web information",
+                                          "The search query for statutory or regulatory web information",
                                       ),
                               }),
                               execute: async ({ query }) => {
@@ -384,3 +376,11 @@ export async function streamWorkspaceChat(
         },
     });
 }
+
+/** Backward compatibility alias */
+export const streamWorkspaceChat = (
+    res: Response,
+    workspaceId: string,
+    userId: string,
+    input: Parameters<typeof streamSahayakChat>[2],
+) => streamSahayakChat(res, userId, input, workspaceId);
