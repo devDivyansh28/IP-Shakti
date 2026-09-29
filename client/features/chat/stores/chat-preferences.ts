@@ -11,9 +11,12 @@ export const CHAT_MODEL_LABELS: Record<ChatModelId, string> = {
     "gpt-4o": "GPT-4o",
 };
 
+export type ChatJurisdiction = "INDIA" | "INTERNATIONAL" | "BOTH";
+
 type WorkspaceChatPrefs = {
     model: ChatModelId;
     webSearch: boolean;
+    jurisdiction: ChatJurisdiction;
 };
 
 type ChatPreferencesState = {
@@ -24,6 +27,7 @@ type ChatPreferencesState = {
     ) => WorkspaceChatPrefs;
     setModel: (workspaceId: string, model: ChatModelId) => void;
     setWebSearch: (workspaceId: string, enabled: boolean) => void;
+    setJurisdiction: (workspaceId: string, jurisdiction: ChatJurisdiction) => void;
 };
 
 function resolveModel(model?: string): ChatModelId {
@@ -41,12 +45,16 @@ export const useChatPreferences = create<ChatPreferencesState>()(
             getPrefs: (workspaceId, defaultModel) => {
                 const existing = get().byWorkspace[workspaceId];
                 if (existing) {
-                    return existing;
+                    return {
+                        ...existing,
+                        jurisdiction: existing.jurisdiction ?? "BOTH",
+                    };
                 }
 
                 return {
                     model: resolveModel(defaultModel),
                     webSearch: false,
+                    jurisdiction: "BOTH",
                 };
             },
             setModel: (workspaceId, model) =>
@@ -69,7 +77,17 @@ export const useChatPreferences = create<ChatPreferencesState>()(
                         },
                     },
                 })),
+            setJurisdiction: (workspaceId, jurisdiction) =>
+                set((state) => ({
+                    byWorkspace: {
+                        ...state.byWorkspace,
+                        [workspaceId]: {
+                            ...state.getPrefs(workspaceId),
+                            jurisdiction,
+                        },
+                    },
+                })),
         }),
-        { name: "chaibook-chat-preferences" },
+        { name: "ip-sakti-chat-preferences" },
     ),
 );

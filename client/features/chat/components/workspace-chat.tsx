@@ -6,11 +6,11 @@ import { DefaultChatTransport, type UIMessage } from "ai";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-    BotIcon,
-    DownloadIcon,
-    GlobeIcon,
-    MessageSquarePlusIcon,
-    Trash2Icon,
+    Download,
+    PanelLeftOpen,
+    ShieldAlert,
+    ShieldCheck,
+    Trash2,
 } from "lucide-react";
 import {
     Message,
@@ -28,26 +28,19 @@ import {
     MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
 import { Bubble, BubbleContent } from "@/components/ui/bubble";
-import { Button } from "@/components/ui/button";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     buildCitationMap,
     chatKeys,
     useConversationMessages,
     useConversations,
-    useCreateConversation,
     useDeleteConversation,
 } from "../hooks/use-conversations";
 import { ChatMessageBody } from "./chat-message-body";
 import { CitationSources } from "./citation-sources";
 import { ChatComposer } from "./chat-composer";
+import { TailgridsSidebar } from "./tailgrids-sidebar";
+import { TailgridsWelcome } from "./tailgrids-welcome";
 import type { ChatCitation } from "../lib/types";
 import { workspaceRoutes } from "@/features/workspaces/lib/routes";
 import { useChatPreferences } from "../stores/chat-preferences";
@@ -77,20 +70,20 @@ export function WorkspaceChat({
     const searchParams = useSearchParams();
     const askPrompt = searchParams.get("ask");
     const handledAskPrompt = useRef<string | null>(null);
+
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [conversationId, setConversationId] = useState<string | null>(null);
     const [citationsByMessageId, setCitationsByMessageId] = useState<
         Record<string, ChatCitation[]>
     >({});
 
     const getPrefs = useChatPreferences((state) => state.getPrefs);
-    const setWebSearch = useChatPreferences((state) => state.setWebSearch);
     const chatPrefs = getPrefs(workspaceId, defaultModel);
 
     const { data: conversations = [], isLoading: conversationsLoading } =
         useConversations(workspaceId);
     const { data: storedMessages, isLoading: messagesLoading } =
         useConversationMessages(workspaceId, conversationId);
-    const createConversation = useCreateConversation(workspaceId);
     const deleteConversation = useDeleteConversation(workspaceId);
 
     const activeConversation = conversations.find(
@@ -116,6 +109,7 @@ export function WorkspaceChat({
                     ...(conversationId ? { conversationId } : {}),
                     model: chatPrefs.model,
                     webSearch: chatPrefs.webSearch,
+                    jurisdiction: chatPrefs.jurisdiction,
                 },
                 fetch: async (url, init) => {
                     const response = await fetch(url, {
@@ -138,6 +132,7 @@ export function WorkspaceChat({
             handleConversationId,
             chatPrefs.model,
             chatPrefs.webSearch,
+            chatPrefs.jurisdiction,
         ],
     );
 
@@ -210,25 +205,20 @@ export function WorkspaceChat({
         workspaceId,
     ]);
 
-    async function handleNewChat() {
+    function handleNewChat() {
         setConversationId(null);
         setMessages([]);
         setCitationsByMessageId({});
     }
 
-    async function handleDeleteConversation() {
-        if (!conversationId) {
-            return;
-        }
-
+    async function handleDeleteActiveConversation() {
+        if (!conversationId) return;
         await deleteConversation.mutateAsync(conversationId);
-        await handleNewChat();
+        handleNewChat();
     }
 
     function handleExportChat() {
-        if (messages.length === 0) {
-            return;
-        }
+        if (messages.length === 0) return;
 
         const markdown = exportConversationMarkdown({
             conversation: activeConversation ?? null,
@@ -236,204 +226,231 @@ export function WorkspaceChat({
             citationsByMessageId,
         });
         const slug =
-            activeConversation?.title?.replace(/[^\w-]+/g, "-").toLowerCase() ??
-            "chat";
+            activeConversation?.title
+                ?.replace(/[^\w-]+/g, "-")
+                .toLowerCase() ?? "ip-sakti-consultation";
         downloadMarkdown(markdown, `${slug}-${Date.now()}.md`);
     }
 
     return (
-        <div className="flex min-h-0 flex-1 flex-col">
-            <div className="flex items-center gap-2 border-b px-4 py-3">
-                <Select
-                    value={conversationId ?? "new"}
-                    onValueChange={(value) => {
-                        if (value === "new") {
-                            void handleNewChat();
-                            return;
-                        }
-                        setConversationId(value);
-                    }}
-                >
-                    <SelectTrigger className="max-w-sm flex-1">
-                        <SelectValue placeholder="Select conversation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="new">New chat</SelectItem>
-                        {conversations.map((conversation) => (
-                            <SelectItem
-                                key={conversation.id}
-                                value={conversation.id}
-                            >
-                                {conversation.title ?? "Untitled chat"}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => void handleNewChat()}
-                >
-                    <MessageSquarePlusIcon />
-                    New
-                </Button>
-
-                <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={messages.length === 0}
-                    onClick={handleExportChat}
-                >
-                    <DownloadIcon />
-                    Export
-                </Button>
-
-                {conversationId ? (
-                    <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => void handleDeleteConversation()}
-                        disabled={deleteConversation.isPending}
-                    >
-                        <Trash2Icon />
-                    </Button>
-                ) : null}
-            </div>
-
-            <MessageScrollerProvider>
-                <MessageScroller className="min-h-0 flex-1">
-                    <MessageScrollerViewport>
-                        <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
-                            {conversationsLoading || messagesLoading ? (
-                                <div className="space-y-4">
-                                    <Skeleton className="h-16 w-2/3 rounded-3xl" />
-                                    <Skeleton className="ml-auto h-16 w-1/2 rounded-3xl" />
-                                </div>
-                            ) : messages.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-                                    <div className="rounded-full bg-muted p-3">
-                                        <BotIcon className="size-6" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="font-medium">
-                                            Chat with your sources
-                                        </p>
-                                        <p className="max-w-sm text-sm text-muted-foreground">
-                                            Ask questions about the materials
-                                            in this workspace. Answers include
-                                            citations when relevant context is
-                                            found.
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <MessageGroup className="gap-6">
-                                    {messages.map((message, messageIndex) => {
-                                        const isUser = message.role === "user";
-                                        const citations =
-                                            citationsByMessageId[message.id];
-                                        const isLastMessage =
-                                            messageIndex === messages.length - 1;
-                                        const isAnimatingMessage =
-                                            !isUser &&
-                                            isStreaming &&
-                                            isLastMessage;
-
-                                        return (
-                                            <MessageScrollerItem
-                                                key={message.id}
-                                                scrollAnchor
-                                            >
-                                                <Message
-                                                    align={
-                                                        isUser ? "end" : "start"
-                                                    }
-                                                >
-                                                    {!isUser ? (
-                                                        <MessageAvatar className="size-8">
-                                                            <BotIcon className="size-4" />
-                                                        </MessageAvatar>
-                                                    ) : null}
-                                                    <MessageContent>
-                                                        <Bubble
-                                                            align={
-                                                                isUser
-                                                                    ? "end"
-                                                                    : "start"
-                                                            }
-                                                            variant={
-                                                                isUser
-                                                                    ? "default"
-                                                                    : "ghost"
-                                                            }
-                                                        >
-                                                            <BubbleContent className="leading-relaxed">
-                                                                {isUser ? (
-                                                                    getMessageText(
-                                                                        message,
-                                                                    )
-                                                                ) : (
-                                                                    <ChatMessageBody
-                                                                        text={getMessageText(
-                                                                            message,
-                                                                        )}
-                                                                        citations={
-                                                                            citations
-                                                                        }
-                                                                        workspaceId={
-                                                                            workspaceId
-                                                                        }
-                                                                        isAnimating={
-                                                                            isAnimatingMessage
-                                                                        }
-                                                                    />
-                                                                )}
-                                                            </BubbleContent>
-                                                        </Bubble>
-                                                        {!isUser &&
-                                                        citations?.length ? (
-                                                            <MessageFooter className="mt-1 w-full max-w-full flex-col items-start gap-0 px-0">
-                                                                <CitationSources
-                                                                    workspaceId={
-                                                                        workspaceId
-                                                                    }
-                                                                    citations={
-                                                                        citations
-                                                                    }
-                                                                />
-                                                            </MessageFooter>
-                                                        ) : null}
-                                                    </MessageContent>
-                                                </Message>
-                                            </MessageScrollerItem>
-                                        );
-                                    })}
-                                </MessageGroup>
-                            )}
-                        </MessageScrollerContent>
-                    </MessageScrollerViewport>
-                    <MessageScrollerButton direction="end" />
-                </MessageScroller>
-            </MessageScrollerProvider>
-
-            {error ? (
-                <div className="border-t bg-destructive/5 px-4 py-2 text-sm text-destructive">
-                    {error.message}
-                </div>
-            ) : null}
-
-            <ChatComposer
-                disabled={createConversation.isPending}
-                isStreaming={isStreaming}
-                webSearchEnabled={chatPrefs.webSearch}
-                onWebSearchChange={(enabled) =>
-                    setWebSearch(workspaceId, enabled)
+        <div className="flex h-screen w-full bg-[#111417] text-[#FBF9F5] overflow-hidden font-sans">
+            {/* 1. TailGrids Left Sidebar */}
+            <TailgridsSidebar
+                workspaceId={workspaceId}
+                activeConversationId={conversationId}
+                onSelectConversation={(id) => setConversationId(id)}
+                onNewChat={handleNewChat}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={() =>
+                    setIsSidebarCollapsed(!isSidebarCollapsed)
                 }
-                onSubmit={(text) => {
-                    void sendMessage({ text });
-                }}
             />
+
+            {/* 2. Main Workspace Canvas */}
+            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#111417] relative">
+                {/* Top Control Bar */}
+                <div className="h-14 border-b border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#161B20]/40 backdrop-blur-sm z-10">
+                    <div className="flex items-center gap-3 min-w-0">
+                        {isSidebarCollapsed && (
+                            <button
+                                type="button"
+                                onClick={() => setIsSidebarCollapsed(false)}
+                                title="Expand sidebar"
+                                className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors"
+                            >
+                                <PanelLeftOpen className="size-4" />
+                            </button>
+                        )}
+
+                        {activeConversation?.title ? (
+                            <h2 className="text-xs sm:text-sm font-medium text-[#FBF9F5] truncate max-w-md">
+                                {activeConversation.title}
+                            </h2>
+                        ) : null}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {messages.length > 0 && (
+                            <>
+                                <button
+                                    type="button"
+                                    onClick={handleExportChat}
+                                    title="Export consultation as Markdown"
+                                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] border border-white/[0.06] transition-colors"
+                                >
+                                    <Download className="size-3.5" />
+                                    <span className="hidden sm:inline">
+                                        Export
+                                    </span>
+                                </button>
+
+                                {conversationId && (
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            void handleDeleteActiveConversation()
+                                        }
+                                        disabled={deleteConversation.isPending}
+                                        title="Delete chat"
+                                        className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                    >
+                                        <Trash2 className="size-3.5" />
+                                    </button>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex-1 flex flex-col min-h-0 relative">
+                    {messages.length === 0 && !conversationsLoading && !messagesLoading ? (
+                        <TailgridsWelcome
+                            workspaceId={workspaceId}
+                            onSendMessage={(text) => {
+                                void sendMessage({ text });
+                            }}
+                            isSubmitting={isStreaming}
+                        />
+                    ) : (
+                        <>
+                            <MessageScrollerProvider>
+                                <MessageScroller className="min-h-0 flex-1">
+                                    <MessageScrollerViewport>
+                                        <MessageScrollerContent className="mx-auto w-full max-w-3xl px-4 py-6">
+                                            {messagesLoading ? (
+                                                <div className="space-y-4">
+                                                    <Skeleton className="h-16 w-2/3 rounded-2xl bg-white/[0.04]" />
+                                                    <Skeleton className="ml-auto h-16 w-1/2 rounded-2xl bg-white/[0.04]" />
+                                                </div>
+                                            ) : (
+                                                <MessageGroup className="gap-6">
+                                                    {messages.map(
+                                                        (
+                                                            message,
+                                                            messageIndex,
+                                                        ) => {
+                                                            const isUser =
+                                                                message.role ===
+                                                                "user";
+                                                            const citations =
+                                                                citationsByMessageId[
+                                                                    message.id
+                                                                ];
+                                                            const isLastMessage =
+                                                                messageIndex ===
+                                                                messages.length -
+                                                                    1;
+                                                            const isAnimatingMessage =
+                                                                !isUser &&
+                                                                isStreaming &&
+                                                                isLastMessage;
+
+                                                            return (
+                                                                <MessageScrollerItem
+                                                                    key={
+                                                                        message.id
+                                                                    }
+                                                                    scrollAnchor
+                                                                >
+                                                                    <Message
+                                                                        align={
+                                                                            isUser
+                                                                                ? "end"
+                                                                                : "start"
+                                                                        }
+                                                                    >
+                                                                        {!isUser && (
+                                                                            <MessageAvatar className="size-8 rounded-lg bg-[#D4F843] flex items-center justify-center text-black">
+                                                                                <ShieldCheck className="size-4 text-black" />
+                                                                            </MessageAvatar>
+                                                                        )}
+                                                                        <MessageContent>
+                                                                            <Bubble
+                                                                                align={
+                                                                                    isUser
+                                                                                        ? "end"
+                                                                                        : "start"
+                                                                                }
+                                                                                variant={
+                                                                                    isUser
+                                                                                        ? "default"
+                                                                                        : "ghost"
+                                                                                }
+                                                                                className={
+                                                                                    isUser
+                                                                                        ? "bg-[#1D232A] text-[#FBF9F5] border border-white/[0.08]"
+                                                                                        : "bg-transparent text-[#FBF9F5]"
+                                                                                }
+                                                                            >
+                                                                                <BubbleContent className="leading-relaxed">
+                                                                                    {isUser ? (
+                                                                                        getMessageText(
+                                                                                            message,
+                                                                                        )
+                                                                                    ) : (
+                                                                                        <ChatMessageBody
+                                                                                            text={getMessageText(
+                                                                                                message,
+                                                                                            )}
+                                                                                            citations={
+                                                                                                citations
+                                                                                            }
+                                                                                            workspaceId={
+                                                                                                workspaceId
+                                                                                            }
+                                                                                            isAnimating={
+                                                                                                isAnimatingMessage
+                                                                                            }
+                                                                                        />
+                                                                                    )}
+                                                                                </BubbleContent>
+                                                                            </Bubble>
+                                                                            {!isUser &&
+                                                                            citations?.length ? (
+                                                                                <MessageFooter className="mt-1 w-full max-w-full flex-col items-start gap-0 px-0">
+                                                                                    <CitationSources
+                                                                                        workspaceId={
+                                                                                            workspaceId
+                                                                                        }
+                                                                                        citations={
+                                                                                            citations
+                                                                                        }
+                                                                                    />
+                                                                                </MessageFooter>
+                                                                            ) : null}
+                                                                        </MessageContent>
+                                                                    </Message>
+                                                                </MessageScrollerItem>
+                                                            );
+                                                        },
+                                                    )}
+                                                </MessageGroup>
+                                            )}
+                                        </MessageScrollerContent>
+                                    </MessageScrollerViewport>
+                                    <MessageScrollerButton direction="end" />
+                                </MessageScroller>
+                            </MessageScrollerProvider>
+
+                            {error ? (
+                                <div className="border-t border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-300">
+                                    {error.message}
+                                </div>
+                            ) : null}
+
+                            <ChatComposer
+                                workspaceId={workspaceId}
+                                disabled={false}
+                                isStreaming={isStreaming}
+                                onSubmit={(text) => {
+                                    void sendMessage({ text });
+                                }}
+                            />
+                        </>
+                    )}
+                </div>
+            </div>
         </div>
     );
 }

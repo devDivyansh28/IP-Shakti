@@ -19,13 +19,13 @@ export default async function WorkspacePage({ params }: WorkspacePageProps) {
     }
 
     return (
-        <WorkspaceShell workspace={workspace}>
+        <div className="flex h-screen w-full bg-[#111417] text-[#FBF9F5] overflow-hidden">
             <Suspense fallback={null}>
                 <WorkspaceChat
                     workspaceId={workspace.id}
                     defaultModel={workspace.defaultModel}
                 />
             </Suspense>
-        </WorkspaceShell>
+        </div>
     );
 }

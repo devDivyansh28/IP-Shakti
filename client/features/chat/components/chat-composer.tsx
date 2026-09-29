@@ -1,99 +1,165 @@
 "use client";
 
-import { useState } from "react";
-import { GlobeIcon, Loader2Icon, SendIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { useRef, useState } from "react";
+import { ArrowUp, Globe, Loader2, Paperclip } from "lucide-react";
+import {
+    useChatPreferences,
+    type ChatJurisdiction,
+} from "../stores/chat-preferences";
 
 type ChatComposerProps = {
+    workspaceId: string;
     onSubmit: (text: string) => void;
     disabled?: boolean;
     isStreaming?: boolean;
-    webSearchEnabled?: boolean;
-    onWebSearchChange?: (enabled: boolean) => void;
 };
 
 export function ChatComposer({
+    workspaceId,
     onSubmit,
     disabled = false,
     isStreaming = false,
-    webSearchEnabled = false,
-    onWebSearchChange,
 }: ChatComposerProps) {
     const [input, setInput] = useState("");
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    function handleSubmit(event: React.FormEvent) {
-        event.preventDefault();
+    const getPrefs = useChatPreferences((state) => state.getPrefs);
+    const setWebSearch = useChatPreferences((state) => state.setWebSearch);
+    const setJurisdiction = useChatPreferences((state) => state.setJurisdiction);
+
+    const chatPrefs = getPrefs(workspaceId);
+    const currentJurisdiction = chatPrefs.jurisdiction ?? "BOTH";
+    const isWebSearchActive = chatPrefs.webSearch ?? false;
+
+    function handleSubmit(e?: React.FormEvent) {
+        if (e) e.preventDefault();
         const text = input.trim();
-        if (!text || disabled || isStreaming) {
-            return;
-        }
+        if (!text || disabled || isStreaming) return;
 
         onSubmit(text);
         setInput("");
     }
 
-    return (
-        <form
-            onSubmit={handleSubmit}
-            className="border-t bg-background p-4"
-        >
-            <div className="mx-auto flex max-w-3xl flex-col gap-2">
-                {onWebSearchChange ? (
-                    <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
-                            size="sm"
-                            variant={webSearchEnabled ? "secondary" : "outline"}
-                            className={cn(
-                                "rounded-full",
-                                webSearchEnabled && "border-primary/30",
-                            )}
-                            onClick={() =>
-                                onWebSearchChange(!webSearchEnabled)
-                            }
-                            disabled={disabled || isStreaming}
-                        >
-                            <GlobeIcon />
-                            Web search
-                        </Button>
-                        {webSearchEnabled ? (
-                            <span className="text-xs text-muted-foreground">
-                                Tavily will search the web when needed
-                            </span>
-                        ) : null}
-                    </div>
-                ) : null}
+    function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSubmit();
+        }
+    }
 
-                <div className="flex items-end gap-2">
-                    <Textarea
+    return (
+        <div className="border-t border-white/[0.06] bg-[#111417]/80 backdrop-blur-md p-4">
+            <div className="mx-auto max-w-3xl">
+                <div className="w-full bg-[#1D232A] border border-white/[0.08] rounded-2xl p-3 shadow-xl focus-within:border-[#D4F843]/50 focus-within:ring-1 focus-within:ring-[#D4F843]/30 transition-all text-left">
+                    {/* Textarea */}
+                    <textarea
                         value={input}
-                        onChange={(event) => setInput(event.target.value)}
-                        placeholder="Ask about your sources…"
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Ask anything or type a prompt..."
                         rows={1}
-                        className="min-h-[44px] max-h-40 resize-none"
-                        onKeyDown={(event) => {
-                            if (event.key === "Enter" && !event.shiftKey) {
-                                event.preventDefault();
-                                handleSubmit(event);
-                            }
-                        }}
                         disabled={disabled || isStreaming}
+                        className="w-full bg-transparent text-[#FBF9F5] placeholder-[#6C7684] text-sm resize-none focus:outline-none scrollbar-none font-sans min-h-[40px] max-h-32"
                     />
-                    <Button
-                        type="submit"
-                        size="icon"
-                        disabled={disabled || isStreaming || !input.trim()}
-                    >
-                        {isStreaming ? (
-                            <Loader2Icon className="animate-spin" />
-                        ) : (
-                            <SendIcon />
-                        )}
-                    </Button>
+
+                    {/* Integrated Bottom Toolbar */}
+                    <div className="flex items-center justify-between pt-2 border-t border-white/[0.06] mt-1">
+                        {/* Left Controls: Attach + Web + Jurisdiction */}
+                        <div className="flex items-center gap-2">
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                className="hidden"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                title="Attach documents"
+                                className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors"
+                            >
+                                <Paperclip className="size-4" />
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setWebSearch(
+                                        workspaceId,
+                                        !isWebSearchActive,
+                                    )
+                                }
+                                title={
+                                    isWebSearchActive
+                                        ? "Web search enabled"
+                                        : "Enable web search"
+                                }
+                                className={`p-1.5 rounded-lg transition-colors ${
+                                    isWebSearchActive
+                                        ? "text-[#D4F843] bg-[#D4F843]/10 border border-[#D4F843]/30"
+                                        : "text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06]"
+                                }`}
+                            >
+                                <Globe className="size-4" />
+                            </button>
+
+                            {/* 3-State Jurisdiction Toggle */}
+                            <div className="inline-flex items-center rounded-lg bg-[#111417] p-0.5 border border-white/[0.08]">
+                                {(
+                                    [
+                                        { id: "INDIA", label: "India" },
+                                        {
+                                            id: "INTERNATIONAL",
+                                            label: "International",
+                                        },
+                                        { id: "BOTH", label: "Both" },
+                                    ] as const
+                                ).map((opt) => {
+                                    const isActive =
+                                        currentJurisdiction === opt.id;
+                                    return (
+                                        <button
+                                            key={opt.id}
+                                            type="button"
+                                            onClick={() =>
+                                                setJurisdiction(
+                                                    workspaceId,
+                                                    opt.id,
+                                                )
+                                            }
+                                            className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all ${
+                                                isActive
+                                                    ? "bg-[#28313B] text-[#D4F843] shadow-sm font-semibold"
+                                                    : "text-[#9EA8B3] hover:text-[#FBF9F5]"
+                                            }`}
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Right Control: Circular Send Button */}
+                        <button
+                            type="button"
+                            onClick={() => handleSubmit()}
+                            disabled={!input.trim() || disabled || isStreaming}
+                            className={`size-8 rounded-full flex items-center justify-center transition-all ${
+                                input.trim() && !disabled && !isStreaming
+                                    ? "bg-[#D4F843] text-black shadow-md shadow-[#D4F843]/20 hover:scale-105"
+                                    : "bg-[#28313B] text-[#6C7684] cursor-not-allowed"
+                            }`}
+                            title="Send prompt"
+                        >
+                            {isStreaming ? (
+                                <Loader2 className="size-4 animate-spin text-black" />
+                            ) : (
+                                <ArrowUp className="size-4 stroke-[2.5]" />
+                            )}
+                        </button>
+                    </div>
                 </div>
             </div>
-        </form>
+        </div>
     );
 }
