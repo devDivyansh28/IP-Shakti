@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LogOut, Sparkles, Sun, Moon, Laptop } from "lucide-react";
+import { Folder, LogOut, Sparkles, Sun, Moon, Laptop, Trash2 } from "lucide-react";
 import { useTheme } from "next-themes";
 import {
     Dialog,
@@ -14,6 +14,11 @@ import {
 import { useUserProfile } from "@/features/auth/hooks/use-user-profile";
 import { signOut } from "@/features/auth/lib/auth-client";
 import { authRoutes } from "@/features/auth/lib/auth-routes";
+import {
+    useWorkspace,
+    useDeleteWorkspace,
+    DeleteWorkspaceDialog,
+} from "@/features/workspaces";
 
 type SettingsDialogProps = {
     open: boolean;
@@ -28,8 +33,24 @@ export function SettingsDialog({
 }: SettingsDialogProps) {
     const router = useRouter();
     const [isSigningOut, setIsSigningOut] = useState(false);
+    const [deleteProjectOpen, setDeleteProjectOpen] = useState(false);
     const { user: userProfile } = useUserProfile();
     const { theme, setTheme } = useTheme();
+
+    const { data: currentWorkspace } = useWorkspace(workspaceId);
+    const deleteWorkspaceMutation = useDeleteWorkspace();
+
+    async function handleConfirmDeleteProject() {
+        if (!workspaceId) return;
+        try {
+            await deleteWorkspaceMutation.mutateAsync(workspaceId);
+            setDeleteProjectOpen(false);
+            onOpenChange(false);
+            router.push("/dashboard");
+        } catch (err) {
+            console.error("Failed to delete project:", err);
+        }
+    }
 
     async function handleSignOut() {
         setIsSigningOut(true);
@@ -121,6 +142,40 @@ export function SettingsDialog({
                         </div>
                     </div>
 
+                    {/* Current Project Card & Danger Zone */}
+                    {currentWorkspace ? (
+                        <div className="space-y-2">
+                            <label className="text-xs font-mono font-bold text-neutral-600 dark:text-[#9EA8B3] uppercase tracking-wider block">
+                                Current Project
+                            </label>
+                            <div className="p-3.5 rounded-xl bg-white dark:bg-[#1D232A] border-2 border-neutral-900 dark:border-white/[0.08] flex items-center justify-between shadow-[2px_2px_0px_0px_#121212] dark:shadow-none">
+                                <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                    <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 flex items-center justify-center shrink-0">
+                                        <Folder className="size-4 text-neutral-900" />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold text-neutral-900 dark:text-[#FBF9F5] truncate">
+                                            {currentWorkspace.title}
+                                        </p>
+                                        <p className="text-[10px] text-neutral-500 dark:text-[#9EA8B3] truncate">
+                                            {currentWorkspace.description || "Active Ayurvedic IP Dossier"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setDeleteProjectOpen(true)}
+                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/20 text-xs font-bold transition-colors shrink-0"
+                                    title="Delete this project"
+                                >
+                                    <Trash2 className="size-3" />
+                                    <span>Delete</span>
+                                </button>
+                            </div>
+                        </div>
+                    ) : null}
+
                     {/* Sign Out Action */}
                     <div className="pt-2 border-t border-neutral-900/10 dark:border-white/[0.06]">
                         <button
@@ -135,6 +190,14 @@ export function SettingsDialog({
                     </div>
                 </div>
             </DialogContent>
+
+            <DeleteWorkspaceDialog
+                open={deleteProjectOpen}
+                workspace={currentWorkspace ?? null}
+                onOpenChange={setDeleteProjectOpen}
+                onConfirm={handleConfirmDeleteProject}
+                isPending={deleteWorkspaceMutation.isPending}
+            />
         </Dialog>
     );
 }

@@ -7,6 +7,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
     Download,
+    Folder,
     PanelLeftOpen,
     ShieldCheck,
     Trash2,
@@ -27,6 +28,7 @@ import {
     useConversations,
     useDeleteConversation,
 } from "../hooks/use-conversations";
+import { useWorkspace } from "@/features/workspaces";
 import { ChatMessageBody } from "./chat-message-body";
 import { CitationSources } from "./citation-sources";
 import { ChatComposer } from "./chat-composer";
@@ -87,6 +89,7 @@ export function WorkspaceChat({
 
     const { data: conversations = [], isLoading: conversationsLoading } =
         useConversations(workspaceId);
+    const { data: currentWorkspace } = useWorkspace(workspaceId);
     const { data: storedMessages, isLoading: messagesLoading } =
         useConversationMessages(workspaceId, conversationId);
     const deleteConversation = useDeleteConversation(workspaceId);
@@ -276,7 +279,7 @@ export function WorkspaceChat({
             <div className="flex-1 flex flex-col h-full min-w-0 bg-[#FAF8F5] dark:bg-[#0B0F12] relative overflow-hidden">
                 {/* Top Control Bar */}
                 <div className="h-14 border-b-2 border-neutral-900/10 dark:border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#FAF8F5]/80 dark:bg-[#0E1216]/60 backdrop-blur-md z-10">
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2.5 min-w-0">
                         {isSidebarCollapsed && (
                             <button
                                 type="button"
@@ -288,11 +291,25 @@ export function WorkspaceChat({
                             </button>
                         )}
 
-                        {activeConversation?.title ? (
-                            <h2 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-[#FBF9F5] truncate max-w-md font-heading">
-                                {activeConversation.title}
-                            </h2>
-                        ) : null}
+                        <div className="flex items-center gap-2 min-w-0">
+                            {currentWorkspace?.title ? (
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-700 dark:text-[#9EA8B3] shrink-0">
+                                    <Folder className="size-3.5 text-neutral-900 dark:text-lime-300" />
+                                    <span className="truncate max-w-[120px] sm:max-w-[200px]">
+                                        {currentWorkspace.title}
+                                    </span>
+                                    {activeConversation?.title ? (
+                                        <span className="text-neutral-400 dark:text-neutral-600 font-normal">/</span>
+                                    ) : null}
+                                </div>
+                            ) : null}
+
+                            {activeConversation?.title ? (
+                                <h2 className="text-xs sm:text-sm font-bold text-neutral-900 dark:text-[#FBF9F5] truncate max-w-[160px] sm:max-w-md font-heading">
+                                    {activeConversation.title}
+                                </h2>
+                            ) : null}
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">

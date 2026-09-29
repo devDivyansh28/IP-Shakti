@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
     Folder,
@@ -18,7 +19,12 @@ import {
     useConversations,
     useDeleteConversation,
 } from "../hooks/use-conversations";
-import { useWorkspaces } from "@/features/workspaces/hooks/use-workspaces";
+import {
+    useWorkspaces,
+    useDeleteWorkspace,
+    DeleteWorkspaceDialog,
+} from "@/features/workspaces";
+import type { Workspace } from "@/features/workspaces";
 import { useUserProfile } from "@/features/auth/hooks/use-user-profile";
 import { workspaceRoutes } from "@/features/workspaces/lib/routes";
 import { CreateProjectModal } from "@/features/workspaces/components/create-project-modal";
@@ -47,12 +53,37 @@ export function TailgridsSidebar({
     const [createProjectOpen, setCreateProjectOpen] = useState(false);
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+    const [deletingWorkspace, setDeletingWorkspace] = useState<Workspace | null>(null);
 
+    const router = useRouter();
     const { user: userProfile } = useUserProfile();
     const { data: conversations = [], isLoading: isConversationsLoading } =
         useConversations(workspaceId);
     const { data: workspaces = [] } = useWorkspaces();
     const deleteConversation = useDeleteConversation(workspaceId);
+    const deleteWorkspaceMutation = useDeleteWorkspace();
+
+    async function handleConfirmDeleteProject() {
+        if (!deletingWorkspace) return;
+        const targetId = deletingWorkspace.id;
+        const isCurrent = targetId === workspaceId;
+
+        try {
+            await deleteWorkspaceMutation.mutateAsync(targetId);
+            setDeletingWorkspace(null);
+
+            if (isCurrent) {
+                const remaining = workspaces.filter((w) => w.id !== targetId);
+                if (remaining.length > 0) {
+                    router.push(workspaceRoutes.detail(remaining[0].id));
+                } else {
+                    router.push("/dashboard");
+                }
+            }
+        } catch (err) {
+            console.error("Failed to delete project:", err);
+        }
+    }
 
     // Filter conversations by search
     const filteredConversations = useMemo(() => {
@@ -211,16 +242,18 @@ export function TailgridsSidebar({
                                     );
 
                                     return (
-                                        <Link
+                                        <div
                                             key={ws.id}
-                                            href={workspaceRoutes.detail(ws.id)}
-                                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
+                                            className={`group flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
                                                 isCurrent
                                                     ? "bg-white dark:bg-[#181E25] text-neutral-900 dark:text-[#FBF9F5] font-semibold border-2 border-neutral-900 dark:border-white/10 shadow-[2px_2px_0px_0px_#121212] dark:shadow-none"
                                                     : "text-neutral-600 dark:text-[#9EA8B3] hover:text-neutral-900 dark:hover:text-[#FBF9F5] hover:bg-neutral-200/40 dark:hover:bg-white/[0.04]"
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2.5 truncate">
+                                            <Link
+                                                href={workspaceRoutes.detail(ws.id)}
+                                                className="flex items-center gap-2.5 truncate flex-1 min-w-0"
+                                            >
                                                 <Folder
                                                     className={`size-4 shrink-0 ${
                                                         isCurrent
@@ -231,12 +264,27 @@ export function TailgridsSidebar({
                                                 <span className="truncate">
                                                     {ws.title}
                                                 </span>
-                                            </div>
+                                            </Link>
 
-                                            <span className="text-[10px] font-mono text-neutral-600 dark:text-[#6C7684] px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-white/[0.04]">
-                                                {countStr}
-                                            </span>
-                                        </Link>
+                                            <div className="flex items-center gap-1 shrink-0 ml-1.5">
+                                                <span className="text-[10px] font-mono text-neutral-600 dark:text-[#6C7684] px-1.5 py-0.5 rounded bg-neutral-200/60 dark:bg-white/[0.04] group-hover:hidden">
+                                                    {countStr}
+                                                </span>
+
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setDeletingWorkspace(ws);
+                                                    }}
+                                                    title={`Delete project "${ws.title}"`}
+                                                    className="hidden group-hover:flex p-1 rounded-md text-neutral-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+                                                >
+                                                    <Trash2 className="size-3.5" />
+                                                </button>
+                                            </div>
+                                        </div>
                                     );
                                 })}
                             </div>
@@ -359,6 +407,16 @@ export function TailgridsSidebar({
                 open={settingsOpen}
                 onOpenChange={setSettingsOpen}
                 workspaceId={workspaceId}
+            />
+
+            <DeleteWorkspaceDialog
+                open={deletingWorkspace !== null}
+                workspace={deletingWorkspace}
+                onOpenChange={(open) => {
+                    if (!open) setDeletingWorkspace(null);
+                }}
+                onConfirm={handleConfirmDeleteProject}
+                isPending={deleteWorkspaceMutation.isPending}
             />
         </>
     );
