@@ -1,27 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, JetBrains_Mono, Figtree } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import QueryProvider from "@/shared/components/providers/query-provider";
 import { ThemeProvider } from "@/shared/components/providers/theme-provider";
 
-const figtreeHeading = Figtree({ subsets: ['latin'], variable: '--font-heading' });
-
-const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], variable: '--font-mono' });
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Chaibook",
-  description: "Chat with your books",
+  title: "IP-SAKTI Sahayak | Ayurvedic IPR & Regulatory Intelligence",
+  description:
+    "Multilingual, RAG-grounded AI assistant for Ayurvedic Intellectual Property, formulation regulatory classification, prior-art novelty, and Access and Benefit Sharing (ABS) compliance.",
 };
 
 export default function RootLayout({
@@ -32,7 +18,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-mono", jetbrainsMono.variable, figtreeHeading.variable)}
+      className={cn("h-full", "antialiased")}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

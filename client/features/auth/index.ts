@@ -3,6 +3,7 @@ export { SignOutButton } from "./components/sign-out-button";
 
 export { authClient, signIn, signOut } from "./lib/auth-client";
 export { useSession } from "./hooks/use-session";
+export { useUserProfile, type UserProfile, type UserRole } from "./hooks/use-user-profile";
 
 export {
     authRoutes,

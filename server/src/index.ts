@@ -30,6 +30,10 @@ app.get("/health", (_req, res) => {
     res.json({ status: "ok" });
 });
 
+app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok" });
+});
+
 registerRoutes(app);
 
 app.use(errorHandler);
