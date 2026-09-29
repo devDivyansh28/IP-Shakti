@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
     Download,
     PanelLeftOpen,
-    ShieldAlert,
     ShieldCheck,
     Trash2,
 } from "lucide-react";
@@ -43,7 +42,10 @@ import { TailgridsSidebar } from "./tailgrids-sidebar";
 import { TailgridsWelcome } from "./tailgrids-welcome";
 import type { ChatCitation } from "../lib/types";
 import { workspaceRoutes } from "@/features/workspaces/lib/routes";
-import { useChatPreferences } from "../stores/chat-preferences";
+import {
+    useChatPreferences,
+    type ChatJurisdiction,
+} from "../stores/chat-preferences";
 import {
     downloadMarkdown,
     exportConversationMarkdown,
@@ -77,8 +79,17 @@ export function WorkspaceChat({
         Record<string, ChatCitation[]>
     >({});
 
-    const getPrefs = useChatPreferences((state) => state.getPrefs);
-    const chatPrefs = getPrefs(workspaceId, defaultModel);
+    // Reactive store selectors
+    const model = useChatPreferences(
+        (s) => s.byWorkspace[workspaceId]?.model ?? "gpt-4o-mini",
+    );
+    const webSearch = useChatPreferences(
+        (s) => s.byWorkspace[workspaceId]?.webSearch ?? false,
+    );
+    const jurisdiction = useChatPreferences(
+        (s) => s.byWorkspace[workspaceId]?.jurisdiction ?? "BOTH",
+    );
+    const setJurisdiction = useChatPreferences((s) => s.setJurisdiction);
 
     const { data: conversations = [], isLoading: conversationsLoading } =
         useConversations(workspaceId);
@@ -107,9 +118,9 @@ export function WorkspaceChat({
                 credentials: "include",
                 body: {
                     ...(conversationId ? { conversationId } : {}),
-                    model: chatPrefs.model,
-                    webSearch: chatPrefs.webSearch,
-                    jurisdiction: chatPrefs.jurisdiction,
+                    model,
+                    webSearch,
+                    jurisdiction,
                 },
                 fetch: async (url, init) => {
                     const response = await fetch(url, {
@@ -130,9 +141,9 @@ export function WorkspaceChat({
             workspaceId,
             conversationId,
             handleConversationId,
-            chatPrefs.model,
-            chatPrefs.webSearch,
-            chatPrefs.jurisdiction,
+            model,
+            webSearch,
+            jurisdiction,
         ],
     );
 
@@ -232,8 +243,15 @@ export function WorkspaceChat({
         downloadMarkdown(markdown, `${slug}-${Date.now()}.md`);
     }
 
+    function handleDispatchMessage(text: string, jur?: ChatJurisdiction) {
+        if (jur) {
+            setJurisdiction(workspaceId, jur);
+        }
+        void sendMessage({ text });
+    }
+
     return (
-        <div className="flex h-screen w-full bg-[#111417] text-[#FBF9F5] overflow-hidden font-sans">
+        <div className="flex h-screen w-full bg-[#0B0F12] text-[#FBF9F5] overflow-hidden font-sans">
             {/* 1. TailGrids Left Sidebar */}
             <TailgridsSidebar
                 workspaceId={workspaceId}
@@ -247,9 +265,18 @@ export function WorkspaceChat({
             />
 
             {/* 2. Main Workspace Canvas */}
-            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#111417] relative">
+            <div className="flex-1 flex flex-col h-full min-w-0 bg-[#0B0F12] relative overflow-hidden">
+                {/* Background Texture from Landing Page */}
+                <div
+                    className="pointer-events-none absolute inset-0 opacity-[0.03] z-0 select-none"
+                    style={{
+                        backgroundImage: "url('/images/background_mat.svg')",
+                        backgroundRepeat: "repeat",
+                    }}
+                />
+
                 {/* Top Control Bar */}
-                <div className="h-14 border-b border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#161B20]/40 backdrop-blur-sm z-10">
+                <div className="h-14 border-b border-white/[0.06] flex items-center justify-between px-4 shrink-0 bg-[#0E1216]/60 backdrop-blur-md z-10">
                     <div className="flex items-center gap-3 min-w-0">
                         {isSidebarCollapsed && (
                             <button
@@ -263,7 +290,7 @@ export function WorkspaceChat({
                         )}
 
                         {activeConversation?.title ? (
-                            <h2 className="text-xs sm:text-sm font-medium text-[#FBF9F5] truncate max-w-md">
+                            <h2 className="text-xs sm:text-sm font-medium text-[#FBF9F5] truncate max-w-md font-heading">
                                 {activeConversation.title}
                             </h2>
                         ) : null}
@@ -303,13 +330,13 @@ export function WorkspaceChat({
                 </div>
 
                 {/* Main Content Area */}
-                <div className="flex-1 flex flex-col min-h-0 relative">
-                    {messages.length === 0 && !conversationsLoading && !messagesLoading ? (
+                <div className="flex-1 flex flex-col min-h-0 relative z-10">
+                    {messages.length === 0 &&
+                    !conversationsLoading &&
+                    !messagesLoading ? (
                         <TailgridsWelcome
                             workspaceId={workspaceId}
-                            onSendMessage={(text) => {
-                                void sendMessage({ text });
-                            }}
+                            onSendMessage={handleDispatchMessage}
                             isSubmitting={isStreaming}
                         />
                     ) : (
@@ -361,7 +388,7 @@ export function WorkspaceChat({
                                                                         }
                                                                     >
                                                                         {!isUser && (
-                                                                            <MessageAvatar className="size-8 rounded-lg bg-[#D4F843] flex items-center justify-center text-black">
+                                                                            <MessageAvatar className="size-8 rounded-lg bg-[#D4F843] flex items-center justify-center text-black shadow-sm shadow-[#D4F843]/20">
                                                                                 <ShieldCheck className="size-4 text-black" />
                                                                             </MessageAvatar>
                                                                         )}
@@ -379,7 +406,7 @@ export function WorkspaceChat({
                                                                                 }
                                                                                 className={
                                                                                     isUser
-                                                                                        ? "bg-[#1D232A] text-[#FBF9F5] border border-white/[0.08]"
+                                                                                        ? "bg-[#181E25] text-[#FBF9F5] border border-white/[0.08]"
                                                                                         : "bg-transparent text-[#FBF9F5]"
                                                                                 }
                                                                             >
@@ -443,9 +470,7 @@ export function WorkspaceChat({
                                 workspaceId={workspaceId}
                                 disabled={false}
                                 isStreaming={isStreaming}
-                                onSubmit={(text) => {
-                                    void sendMessage({ text });
-                                }}
+                                onSubmit={handleDispatchMessage}
                             />
                         </>
                     )}

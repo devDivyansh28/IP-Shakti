@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ArrowUp, Globe, Loader2, Paperclip } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUp, Globe, Loader2, Paperclip, Sparkles } from "lucide-react";
 import {
     useChatPreferences,
     type ChatJurisdiction,
@@ -9,7 +9,7 @@ import {
 
 type ChatComposerProps = {
     workspaceId: string;
-    onSubmit: (text: string) => void;
+    onSubmit: (text: string, jurisdiction?: ChatJurisdiction) => void;
     disabled?: boolean;
     isStreaming?: boolean;
 };
@@ -23,20 +23,32 @@ export function ChatComposer({
     const [input, setInput] = useState("");
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const getPrefs = useChatPreferences((state) => state.getPrefs);
-    const setWebSearch = useChatPreferences((state) => state.setWebSearch);
-    const setJurisdiction = useChatPreferences((state) => state.setJurisdiction);
+    const storedJurisdiction = useChatPreferences(
+        (s) => s.byWorkspace[workspaceId]?.jurisdiction ?? "BOTH",
+    );
+    const setJurisdiction = useChatPreferences((s) => s.setJurisdiction);
+    const isWebSearchActive = useChatPreferences(
+        (s) => s.byWorkspace[workspaceId]?.webSearch ?? false,
+    );
+    const setWebSearch = useChatPreferences((s) => s.setWebSearch);
+    const model = useChatPreferences(
+        (s) => s.byWorkspace[workspaceId]?.model ?? "gpt-4o-mini",
+    );
 
-    const chatPrefs = getPrefs(workspaceId);
-    const currentJurisdiction = chatPrefs.jurisdiction ?? "BOTH";
-    const isWebSearchActive = chatPrefs.webSearch ?? false;
+    // Instant local state for immediate 0ms UI reactivity
+    const [selectedJurisdiction, setSelectedJurisdiction] =
+        useState<ChatJurisdiction>(storedJurisdiction);
+
+    useEffect(() => {
+        setSelectedJurisdiction(storedJurisdiction);
+    }, [storedJurisdiction]);
 
     function handleSubmit(e?: React.FormEvent) {
         if (e) e.preventDefault();
         const text = input.trim();
         if (!text || disabled || isStreaming) return;
 
-        onSubmit(text);
+        onSubmit(text, selectedJurisdiction);
         setInput("");
     }
 
@@ -47,16 +59,21 @@ export function ChatComposer({
         }
     }
 
+    function handleJurisdictionClick(jur: ChatJurisdiction) {
+        setSelectedJurisdiction(jur);
+        setJurisdiction(workspaceId, jur);
+    }
+
     return (
-        <div className="border-t border-white/[0.06] bg-[#111417]/80 backdrop-blur-md p-4">
+        <div className="border-t border-white/[0.06] bg-[#0E1216]/80 backdrop-blur-md p-4">
             <div className="mx-auto max-w-3xl">
-                <div className="w-full bg-[#1D232A] border border-white/[0.08] rounded-2xl p-3 shadow-xl focus-within:border-[#D4F843]/50 focus-within:ring-1 focus-within:ring-[#D4F843]/30 transition-all text-left">
+                <div className="w-full bg-[#161B20] border border-white/[0.08] rounded-2xl p-3 shadow-xl focus-within:border-[#D4F843]/50 focus-within:ring-1 focus-within:ring-[#D4F843]/20 transition-all text-left">
                     {/* Textarea */}
                     <textarea
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Ask anything or type a prompt..."
+                        placeholder="Ask me anything..."
                         rows={1}
                         disabled={disabled || isStreaming}
                         className="w-full bg-transparent text-[#FBF9F5] placeholder-[#6C7684] text-sm resize-none focus:outline-none scrollbar-none font-sans min-h-[40px] max-h-32"
@@ -102,8 +119,8 @@ export function ChatComposer({
                                 <Globe className="size-4" />
                             </button>
 
-                            {/* 3-State Jurisdiction Toggle */}
-                            <div className="inline-flex items-center rounded-lg bg-[#111417] p-0.5 border border-white/[0.08]">
+                            {/* 3-State Jurisdiction Toggle (100% Reactive) */}
+                            <div className="inline-flex items-center rounded-lg bg-[#0E1216] p-0.5 border border-white/[0.08]">
                                 {(
                                     [
                                         { id: "INDIA", label: "India" },
@@ -115,16 +132,13 @@ export function ChatComposer({
                                     ] as const
                                 ).map((opt) => {
                                     const isActive =
-                                        currentJurisdiction === opt.id;
+                                        selectedJurisdiction === opt.id;
                                     return (
                                         <button
                                             key={opt.id}
                                             type="button"
                                             onClick={() =>
-                                                setJurisdiction(
-                                                    workspaceId,
-                                                    opt.id,
-                                                )
+                                                handleJurisdictionClick(opt.id)
                                             }
                                             className={`px-2 py-0.5 rounded text-[10px] font-medium transition-all ${
                                                 isActive
@@ -140,23 +154,36 @@ export function ChatComposer({
                         </div>
 
                         {/* Right Control: Circular Send Button */}
-                        <button
-                            type="button"
-                            onClick={() => handleSubmit()}
-                            disabled={!input.trim() || disabled || isStreaming}
-                            className={`size-8 rounded-full flex items-center justify-center transition-all ${
-                                input.trim() && !disabled && !isStreaming
-                                    ? "bg-[#D4F843] text-black shadow-md shadow-[#D4F843]/20 hover:scale-105"
-                                    : "bg-[#28313B] text-[#6C7684] cursor-not-allowed"
-                            }`}
-                            title="Send prompt"
-                        >
-                            {isStreaming ? (
-                                <Loader2 className="size-4 animate-spin text-black" />
-                            ) : (
-                                <ArrowUp className="size-4 stroke-[2.5]" />
-                            )}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-[10px] text-[#9EA8B3] font-mono">
+                                <Sparkles className="size-2.5 text-[#D4F843]" />
+                                <span>
+                                    {model === "gpt-4o"
+                                        ? "GPT-4o"
+                                        : "GPT-4o Mini"}
+                                </span>
+                            </span>
+
+                            <button
+                                type="button"
+                                onClick={() => handleSubmit()}
+                                disabled={
+                                    !input.trim() || disabled || isStreaming
+                                }
+                                className={`size-8 rounded-full flex items-center justify-center transition-all ${
+                                    input.trim() && !disabled && !isStreaming
+                                        ? "bg-[#D4F843] text-black shadow-md shadow-[#D4F843]/20 hover:scale-105"
+                                        : "bg-[#28313B] text-[#6C7684] cursor-not-allowed"
+                                }`}
+                                title="Send prompt"
+                            >
+                                {isStreaming ? (
+                                    <Loader2 className="size-3.5 animate-spin text-black" />
+                                ) : (
+                                    <ArrowUp className="size-3.5 stroke-[2.5]" />
+                                )}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

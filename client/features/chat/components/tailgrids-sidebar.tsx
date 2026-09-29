@@ -2,30 +2,27 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import {
-    FolderGit2,
-    LogOut,
-    MessageSquare,
+    Folder,
+    FolderPlus,
     MoreHorizontal,
     PanelLeftClose,
-    Plus,
     Search,
-    Settings,
-    ShieldCheck,
+    Sparkles,
+    SquarePen,
     Trash2,
 } from "lucide-react";
-import { format, isToday, isYesterday } from "date-fns";
+import { isToday, isYesterday } from "date-fns";
 import {
     useConversations,
     useDeleteConversation,
 } from "../hooks/use-conversations";
 import { useWorkspaces } from "@/features/workspaces/hooks/use-workspaces";
 import { useUserProfile } from "@/features/auth/hooks/use-user-profile";
-import { signOut } from "@/features/auth/lib/auth-client";
-import { authRoutes } from "@/features/auth/lib/auth-routes";
 import { workspaceRoutes } from "@/features/workspaces/lib/routes";
+import { CreateProjectModal } from "@/features/workspaces/components/create-project-modal";
+import { SettingsDialog } from "./settings-dialog";
 import type { Conversation } from "../lib/types";
 
 type TailgridsSidebarProps = {
@@ -45,11 +42,11 @@ export function TailgridsSidebar({
     isCollapsed,
     onToggleCollapse,
 }: TailgridsSidebarProps) {
-    const router = useRouter();
+    const [searchOpen, setSearchOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
-    const [projectsOpen, setProjectsOpen] = useState(true);
+    const [createProjectOpen, setCreateProjectOpen] = useState(false);
+    const [settingsOpen, setSettingsOpen] = useState(false);
     const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-    const [isSigningOut, setIsSigningOut] = useState(false);
 
     const { user: userProfile } = useUserProfile();
     const { data: conversations = [], isLoading: isConversationsLoading } =
@@ -66,21 +63,21 @@ export function TailgridsSidebar({
         );
     }, [conversations, searchQuery]);
 
-    // Group into Today and Earlier
-    const { todayChats, earlierChats } = useMemo(() => {
+    // Group into Today and Yesterday / Earlier
+    const { todayChats, yesterdayChats } = useMemo(() => {
         const today: Conversation[] = [];
-        const earlier: Conversation[] = [];
+        const yesterday: Conversation[] = [];
 
         for (const conv of filteredConversations) {
             const date = new Date(conv.updatedAt || conv.createdAt);
             if (isToday(date)) {
                 today.push(conv);
             } else {
-                earlier.push(conv);
+                yesterday.push(conv);
             }
         }
 
-        return { todayChats: today, earlierChats: earlier };
+        return { todayChats: today, yesterdayChats: yesterday };
     }, [filteredConversations]);
 
     async function handleDelete(e: React.MouseEvent, convId: string) {
@@ -92,24 +89,8 @@ export function TailgridsSidebar({
         }
     }
 
-    async function handleSignOut() {
-        setIsSigningOut(true);
-        try {
-            await signOut({
-                fetchOptions: {
-                    onSuccess: () => {
-                        router.push(authRoutes.login);
-                        router.refresh();
-                    },
-                },
-            });
-        } finally {
-            setIsSigningOut(false);
-        }
-    }
-
     const userInitials = useMemo(() => {
-        if (!userProfile?.name) return "U";
+        if (!userProfile?.name) return "RS";
         return userProfile.name
             .split(" ")
             .map((n) => n[0])
@@ -119,107 +100,126 @@ export function TailgridsSidebar({
     }, [userProfile]);
 
     return (
-        <motion.aside
-            initial={false}
-            animate={{
-                width: isCollapsed ? 0 : 280,
-                opacity: isCollapsed ? 0 : 1,
-            }}
-            transition={{
-                type: "spring",
-                damping: 26,
-                stiffness: 240,
-                mass: 0.8,
-            }}
-            className="relative flex flex-col h-full bg-[#161B20] border-r border-white/[0.08] text-[#FBF9F5] select-none overflow-hidden shrink-0 z-20"
-        >
-            <div className="w-[280px] h-full flex flex-col">
-                {/* 1. Brand Header */}
-                <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
-                    <Link
-                        href="/dashboard"
-                        className="flex items-center gap-2.5 group"
-                    >
-                        <div className="size-8 rounded-lg bg-[#D4F843] flex items-center justify-center text-black font-bold shadow-sm shadow-[#D4F843]/20 group-hover:scale-105 transition-transform">
-                            <ShieldCheck className="size-5 text-black" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="font-semibold text-sm tracking-tight text-[#FBF9F5]">
-                                IP-SAKTI
-                            </span>
-                            <span className="text-[10px] font-mono text-[#D4F843] uppercase tracking-wider">
-                                Sahayak AI
-                            </span>
-                        </div>
-                    </Link>
+        <>
+            <motion.aside
+                initial={false}
+                animate={{
+                    width: isCollapsed ? 0 : 280,
+                    opacity: isCollapsed ? 0 : 1,
+                }}
+                transition={{
+                    type: "spring",
+                    damping: 26,
+                    stiffness: 240,
+                    mass: 0.8,
+                }}
+                className="relative flex flex-col h-full bg-[#0D1115] border-r border-white/[0.08] text-[#FBF9F5] select-none overflow-hidden shrink-0 z-20 font-sans"
+            >
+                <div className="w-[280px] h-full flex flex-col justify-between">
+                    {/* Top Content */}
+                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 flex flex-col">
+                        {/* 1. Header: Brand + Collapse Button */}
+                        <div className="flex items-center justify-between px-4 py-4 border-b border-white/[0.06]">
+                            <Link
+                                href="/dashboard"
+                                className="flex items-center gap-2 group"
+                            >
+                                <Sparkles className="size-5 text-[#D4F843] group-hover:rotate-12 transition-transform" />
+                                <span className="font-semibold text-base tracking-tight text-[#FBF9F5] font-heading">
+                                    IP-SAKTI
+                                </span>
+                            </Link>
 
-                    <button
-                        type="button"
-                        onClick={onToggleCollapse}
-                        title="Collapse sidebar"
-                        className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors"
-                    >
-                        <PanelLeftClose className="size-4" />
-                    </button>
-                </div>
-
-                {/* 2. Action Bar: + New Chat */}
-                <div className="p-3">
-                    <button
-                        type="button"
-                        onClick={onNewChat}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-[#1D232A] hover:bg-[#252C35] text-[#FBF9F5] text-sm font-medium border border-white/[0.08] hover:border-[#D4F843]/40 transition-all shadow-sm group"
-                    >
-                        <Plus className="size-4 text-[#D4F843] group-hover:rotate-90 transition-transform" />
-                        <span>New Chat</span>
-                    </button>
-                </div>
-
-                {/* 3. Search Bar */}
-                <div className="px-3 pb-2">
-                    <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 size-3.5 text-[#9EA8B3]" />
-                        <input
-                            type="text"
-                            placeholder="Search..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#111417] text-xs text-[#FBF9F5] placeholder-[#6C7684] border border-white/[0.06] focus:border-[#D4F843]/50 focus:outline-none transition-colors"
-                        />
-                    </div>
-                </div>
-
-                {/* 4. Scrollable Content: Projects & Recent Chats */}
-                <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4 text-xs font-sans scrollbar-thin scrollbar-thumb-white/10">
-                    {/* Projects Section */}
-                    <div>
-                        <div
-                            onClick={() => setProjectsOpen(!projectsOpen)}
-                            className="flex items-center justify-between px-2 py-1 text-[11px] font-medium text-[#9EA8B3] uppercase tracking-wider cursor-pointer hover:text-[#FBF9F5]"
-                        >
-                            <span>Projects</span>
-                            <span className="px-1.5 py-0.5 rounded-full bg-white/[0.06] text-[10px] text-[#9EA8B3]">
-                                {workspaces.length}
-                            </span>
+                            <button
+                                type="button"
+                                onClick={onToggleCollapse}
+                                title="Collapse sidebar"
+                                className="p-1.5 rounded-lg text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors"
+                            >
+                                <PanelLeftClose className="size-4" />
+                            </button>
                         </div>
 
-                        {projectsOpen && (
+                        <div className="px-3 pt-3 space-y-1">
+                            {/* 2. New Chat Link Row (Matching TailGrids Screenshot) */}
+                            <button
+                                type="button"
+                                onClick={onNewChat}
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-medium text-[#FBF9F5] hover:bg-white/[0.06] transition-colors group text-left"
+                            >
+                                <SquarePen className="size-4 text-[#9EA8B3] group-hover:text-[#D4F843] transition-colors" />
+                                <span>New Chat</span>
+                            </button>
+
+                            {/* 3. Search Row */}
+                            <div className="w-full">
+                                {!searchOpen ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setSearchOpen(true)}
+                                        className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-sm font-normal text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors text-left"
+                                    >
+                                        <Search className="size-4 text-[#9EA8B3]" />
+                                        <span>Search</span>
+                                    </button>
+                                ) : (
+                                    <div className="relative my-1">
+                                        <Search className="absolute left-2.5 top-2.5 size-3.5 text-[#9EA8B3]" />
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            placeholder="Search chats or projects..."
+                                            value={searchQuery}
+                                            onChange={(e) =>
+                                                setSearchQuery(e.target.value)
+                                            }
+                                            onBlur={() => {
+                                                if (!searchQuery)
+                                                    setSearchOpen(false);
+                                            }}
+                                            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-[#161B20] text-xs text-[#FBF9F5] placeholder-[#6C7684] border border-white/[0.08] focus:border-[#D4F843]/60 focus:outline-none transition-colors"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* 4. Projects Section */}
+                        <div className="px-3 pt-5">
+                            <div className="flex items-center justify-between px-3 py-1 text-xs font-semibold text-[#9EA8B3] tracking-wide">
+                                <span>Projects</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setCreateProjectOpen(true)}
+                                    title="Create New Project"
+                                    className="p-1 rounded-md text-[#9EA8B3] hover:text-[#D4F843] hover:bg-white/[0.06] transition-colors"
+                                >
+                                    <FolderPlus className="size-4" />
+                                </button>
+                            </div>
+
                             <div className="mt-1 space-y-0.5">
-                                {workspaces.map((ws) => {
+                                {workspaces.map((ws, idx) => {
                                     const isCurrent = ws.id === workspaceId;
+                                    // 2-digit format count (e.g., 01, 02)
+                                    const countStr = String(idx + 1).padStart(
+                                        2,
+                                        "0",
+                                    );
+
                                     return (
                                         <Link
                                             key={ws.id}
                                             href={workspaceRoutes.detail(ws.id)}
-                                            className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
+                                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors ${
                                                 isCurrent
-                                                    ? "bg-[#1D232A] text-[#FBF9F5] font-medium border border-white/[0.08]"
+                                                    ? "bg-[#181E25] text-[#FBF9F5] font-medium border border-white/[0.08]"
                                                     : "text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.04]"
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2 truncate">
-                                                <FolderGit2
-                                                    className={`size-3.5 shrink-0 ${
+                                            <div className="flex items-center gap-2.5 truncate">
+                                                <Folder
+                                                    className={`size-4 shrink-0 ${
                                                         isCurrent
                                                             ? "text-[#D4F843]"
                                                             : "text-[#6C7684]"
@@ -229,148 +229,135 @@ export function TailgridsSidebar({
                                                     {ws.title}
                                                 </span>
                                             </div>
+
+                                            <span className="text-[10px] font-mono text-[#6C7684] px-1.5 py-0.5 rounded bg-white/[0.04]">
+                                                {countStr}
+                                            </span>
                                         </Link>
                                     );
                                 })}
                             </div>
-                        )}
-                    </div>
-
-                    {/* Recent Chats Section */}
-                    <div>
-                        <div className="px-2 py-1 text-[11px] font-medium text-[#9EA8B3] uppercase tracking-wider">
-                            Recent Chats
                         </div>
 
-                        {isConversationsLoading ? (
-                            <div className="px-2 py-3 text-xs text-[#6C7684]">
-                                Loading chats...
-                            </div>
-                        ) : filteredConversations.length === 0 ? (
-                            <div className="px-2 py-3 text-xs text-[#6C7684]">
-                                No conversations found
-                            </div>
-                        ) : (
-                            <div className="mt-1 space-y-3">
-                                {/* Today */}
-                                {todayChats.length > 0 && (
-                                    <div className="space-y-0.5">
-                                        <div className="px-2 py-0.5 text-[10px] text-[#6C7684] font-medium uppercase">
-                                            Today
-                                        </div>
-                                        {todayChats.map((chat) => (
-                                            <ChatListItem
-                                                key={chat.id}
-                                                chat={chat}
-                                                isActive={
-                                                    activeConversationId ===
-                                                    chat.id
-                                                }
-                                                onSelect={() =>
-                                                    onSelectConversation(
-                                                        chat.id,
-                                                    )
-                                                }
-                                                onDelete={(e) =>
-                                                    handleDelete(e, chat.id)
-                                                }
-                                                isMenuOpen={
+                        {/* 5. Recent Chats Section (TODAY & YESTERDAY) */}
+                        <div className="px-3 pt-5 space-y-4">
+                            {/* TODAY */}
+                            {todayChats.length > 0 && (
+                                <div className="space-y-1">
+                                    <div className="px-3 text-[10px] font-mono uppercase tracking-wider text-[#6C7684]">
+                                        TODAY
+                                    </div>
+                                    {todayChats.map((chat) => (
+                                        <ChatListItem
+                                            key={chat.id}
+                                            chat={chat}
+                                            isActive={
+                                                activeConversationId === chat.id
+                                            }
+                                            onSelect={() =>
+                                                onSelectConversation(chat.id)
+                                            }
+                                            onDelete={(e) =>
+                                                handleDelete(e, chat.id)
+                                            }
+                                            isMenuOpen={activeMenuId === chat.id}
+                                            onToggleMenu={(e) => {
+                                                e.stopPropagation();
+                                                setActiveMenuId(
                                                     activeMenuId === chat.id
-                                                }
-                                                onToggleMenu={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenuId(
-                                                        activeMenuId === chat.id
-                                                            ? null
-                                                            : chat.id,
-                                                    );
-                                                }}
-                                            />
-                                        ))}
+                                                        ? null
+                                                        : chat.id,
+                                                );
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* YESTERDAY / EARLIER */}
+                            {yesterdayChats.length > 0 && (
+                                <div className="space-y-1">
+                                    <div className="px-3 text-[10px] font-mono uppercase tracking-wider text-[#6C7684]">
+                                        YESTERDAY
+                                    </div>
+                                    {yesterdayChats.map((chat) => (
+                                        <ChatListItem
+                                            key={chat.id}
+                                            chat={chat}
+                                            isActive={
+                                                activeConversationId === chat.id
+                                            }
+                                            onSelect={() =>
+                                                onSelectConversation(chat.id)
+                                            }
+                                            onDelete={(e) =>
+                                                handleDelete(e, chat.id)
+                                            }
+                                            isMenuOpen={activeMenuId === chat.id}
+                                            onToggleMenu={(e) => {
+                                                e.stopPropagation();
+                                                setActiveMenuId(
+                                                    activeMenuId === chat.id
+                                                        ? null
+                                                        : chat.id,
+                                                );
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+
+                            {!isConversationsLoading &&
+                                filteredConversations.length === 0 && (
+                                    <div className="px-3 py-4 text-xs text-[#6C7684] italic">
+                                        No recent consultations
                                     </div>
                                 )}
-
-                                {/* Earlier */}
-                                {earlierChats.length > 0 && (
-                                    <div className="space-y-0.5">
-                                        <div className="px-2 py-0.5 text-[10px] text-[#6C7684] font-medium uppercase">
-                                            Earlier
-                                        </div>
-                                        {earlierChats.map((chat) => (
-                                            <ChatListItem
-                                                key={chat.id}
-                                                chat={chat}
-                                                isActive={
-                                                    activeConversationId ===
-                                                    chat.id
-                                                }
-                                                onSelect={() =>
-                                                    onSelectConversation(
-                                                        chat.id,
-                                                    )
-                                                }
-                                                onDelete={(e) =>
-                                                    handleDelete(e, chat.id)
-                                                }
-                                                isMenuOpen={
-                                                    activeMenuId === chat.id
-                                                }
-                                                onToggleMenu={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenuId(
-                                                        activeMenuId === chat.id
-                                                            ? null
-                                                            : chat.id,
-                                                    );
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* 5. Bottom User Profile Card */}
-                <div className="p-3 border-t border-white/[0.06] bg-[#111417]/40">
-                    <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[#1D232A]/80 border border-white/[0.06]">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="size-8 rounded-full bg-gradient-to-br from-[#28313B] to-[#161B20] border border-white/10 flex items-center justify-center text-xs font-semibold text-[#D4F843] shrink-0">
-                                {userInitials}
-                            </div>
-                            <div className="min-w-0">
-                                <p className="text-xs font-medium text-[#FBF9F5] truncate">
-                                    {userProfile?.name ?? "Researcher"}
-                                </p>
-                                <p className="text-[10px] text-[#9EA8B3] truncate">
-                                    {userProfile?.email ?? "user@ipsakti.in"}
-                                </p>
-                            </div>
                         </div>
+                    </div>
 
-                        <div className="flex items-center gap-1 shrink-0">
-                            <Link
-                                href="/settings"
-                                title="Settings"
-                                className="p-1 rounded-md text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.06] transition-colors"
-                            >
-                                <Settings className="size-3.5" />
-                            </Link>
-                            <button
-                                type="button"
-                                onClick={() => void handleSignOut()}
-                                disabled={isSigningOut}
-                                title="Sign out"
-                                className="p-1 rounded-md text-[#9EA8B3] hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                            >
-                                <LogOut className="size-3.5" />
-                            </button>
+                    {/* 6. Floating Bottom User Tile (Matching Screenshot) */}
+                    <div className="p-3 border-t border-white/[0.06] bg-[#0D1115]">
+                        <div
+                            onClick={() => setSettingsOpen(true)}
+                            className="flex items-center justify-between gap-2.5 p-2 rounded-2xl bg-gradient-to-r from-white/[0.06] to-white/[0.02] border border-white/[0.08] hover:border-[#D4F843]/40 cursor-pointer transition-all shadow-lg group"
+                        >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="size-8 rounded-full bg-gradient-to-br from-[#28313B] to-[#12161A] border border-white/10 flex items-center justify-center text-xs font-semibold text-[#D4F843] shrink-0">
+                                    {userInitials}
+                                </div>
+                                <div className="min-w-0 text-left">
+                                    <p className="text-xs font-semibold text-[#FBF9F5] truncate">
+                                        {userProfile?.name ?? "Researcher"}
+                                    </p>
+                                    <p className="text-[10px] text-[#9EA8B3] truncate">
+                                        {userProfile?.role === "ADMIN"
+                                            ? "Admin"
+                                            : "Scholar"}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <span className="px-2 py-1 rounded-lg text-[10px] font-semibold bg-white/[0.06] text-[#9EA8B3] group-hover:text-[#FBF9F5] group-hover:bg-white/[0.1] transition-colors shrink-0">
+                                Settings
+                            </span>
                         </div>
                     </div>
                 </div>
-            </div>
-        </motion.aside>
+            </motion.aside>
+
+            {/* In-place Modals */}
+            <CreateProjectModal
+                open={createProjectOpen}
+                onOpenChange={setCreateProjectOpen}
+            />
+
+            <SettingsDialog
+                open={settingsOpen}
+                onOpenChange={setSettingsOpen}
+                workspaceId={workspaceId}
+            />
+        </>
     );
 }
 
@@ -394,22 +381,15 @@ function ChatListItem({
     return (
         <div
             onClick={onSelect}
-            className={`group relative flex items-center justify-between px-2.5 py-2 rounded-lg text-xs cursor-pointer transition-colors ${
+            className={`group relative flex items-center justify-between px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
                 isActive
-                    ? "bg-[#1D232A] text-[#FBF9F5] font-medium border-l-2 border-l-[#D4F843] border-y border-r border-white/[0.06]"
+                    ? "bg-[#181E25] text-[#FBF9F5] font-medium border-l-2 border-l-[#D4F843]"
                     : "text-[#9EA8B3] hover:text-[#FBF9F5] hover:bg-white/[0.04]"
             }`}
         >
-            <div className="flex items-center gap-2 truncate pr-2">
-                <MessageSquare
-                    className={`size-3.5 shrink-0 ${
-                        isActive ? "text-[#D4F843]" : "text-[#6C7684]"
-                    }`}
-                />
-                <span className="truncate">
-                    {chat.title ?? "Untitled Chat"}
-                </span>
-            </div>
+            <span className="truncate pr-2 font-normal">
+                {chat.title ?? "Untitled Consultation"}
+            </span>
 
             <div className="relative shrink-0">
                 <button
@@ -421,7 +401,7 @@ function ChatListItem({
                 </button>
 
                 {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-1 z-30 w-32 bg-[#1D232A] border border-white/10 rounded-lg shadow-xl p-1 text-xs">
+                    <div className="absolute right-0 top-full mt-1 z-30 w-32 bg-[#181E25] border border-white/10 rounded-lg shadow-xl p-1 text-xs">
                         <button
                             type="button"
                             onClick={onDelete}
