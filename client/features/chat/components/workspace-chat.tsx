@@ -12,13 +12,6 @@ import {
     Trash2,
 } from "lucide-react";
 import {
-    Message,
-    MessageAvatar,
-    MessageContent,
-    MessageFooter,
-    MessageGroup,
-} from "@/components/ui/message";
-import {
     MessageScroller,
     MessageScrollerButton,
     MessageScrollerContent,
@@ -26,7 +19,6 @@ import {
     MessageScrollerProvider,
     MessageScrollerViewport,
 } from "@/components/ui/message-scroller";
-import { Bubble, BubbleContent } from "@/components/ui/bubble";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     buildCitationMap,
@@ -359,7 +351,7 @@ export function WorkspaceChat({
                                                     <Skeleton className="ml-auto h-16 w-1/2 rounded-2xl bg-neutral-200/80 dark:bg-white/[0.04]" />
                                                 </div>
                                             ) : (
-                                                <MessageGroup className="gap-6">
+                                                <div className="space-y-6 w-full">
                                                     {messages.map(
                                                         (
                                                             message,
@@ -388,74 +380,52 @@ export function WorkspaceChat({
                                                                     }
                                                                     scrollAnchor
                                                                 >
-                                                                    <Message
-                                                                        align={
-                                                                            isUser
-                                                                                ? "end"
-                                                                                : "start"
-                                                                        }
-                                                                    >
-                                                                        {!isUser && (
-                                                                            <MessageAvatar className="size-8 rounded-lg bg-lime-300 border-2 border-neutral-900 flex items-center justify-center text-neutral-900 font-bold shadow-sm">
+                                                                    {isUser ? (
+                                                                        /* Clean User Bubble (Aligned Right) */
+                                                                        <div className="flex w-full justify-end">
+                                                                            <div className="max-w-[85%] sm:max-w-[75%] rounded-2xl rounded-tr-sm bg-neutral-900 text-white dark:bg-[#1D232A] dark:text-[#FBF9F5] border border-neutral-900 dark:border-white/10 px-4 py-3 text-sm leading-relaxed shadow-sm font-sans">
+                                                                                {getMessageText(
+                                                                                    message,
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
+                                                                    ) : (
+                                                                        /* Clean Assistant Card (Avatar at TOP, Clean Rounded Surface) */
+                                                                        <div className="flex w-full items-start gap-3">
+                                                                            <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 dark:border-white/20 flex items-center justify-center shrink-0 mt-0.5 text-neutral-900 font-bold shadow-sm">
                                                                                 <ShieldCheck className="size-4 text-neutral-900" />
-                                                                            </MessageAvatar>
-                                                                        )}
-                                                                        <MessageContent>
-                                                                            <Bubble
-                                                                                align={
-                                                                                    isUser
-                                                                                        ? "end"
-                                                                                        : "start"
-                                                                                }
-                                                                                variant={
-                                                                                    isUser
-                                                                                        ? "default"
-                                                                                        : "ghost"
-                                                                                }
-                                                                                className={
-                                                                                    isUser
-                                                                                        ? "bg-neutral-900 text-white dark:bg-[#181E25] dark:text-[#FBF9F5] border-2 border-neutral-900 dark:border-white/10 shadow-[2px_2px_0px_0px_#D4F843]"
-                                                                                        : "bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border-2 border-neutral-900 dark:border-white/20 shadow-[3px_3px_0px_0px_#121212] dark:shadow-none rounded-2xl"
-                                                                                }
-                                                                            >
-                                                                                <BubbleContent className="leading-relaxed p-4">
-                                                                                    {isUser ? (
-                                                                                        getMessageText(
-                                                                                            message,
-                                                                                        )
-                                                                                    ) : (
-                                                                                        <ChatMessageBody
-                                                                                            text={getMessageText(
-                                                                                                message,
-                                                                                            )}
-                                                                                            citations={
-                                                                                                citations
-                                                                                            }
+                                                                            </div>
+                                                                            <div className="flex-1 min-w-0 bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border border-neutral-900/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 text-sm leading-relaxed shadow-sm font-sans">
+                                                                                <ChatMessageBody
+                                                                                    text={getMessageText(
+                                                                                        message,
+                                                                                    )}
+                                                                                    citations={
+                                                                                        citations
+                                                                                    }
+                                                                                    workspaceId={
+                                                                                        workspaceId
+                                                                                    }
+                                                                                    isAnimating={
+                                                                                        isAnimatingMessage
+                                                                                    }
+                                                                                />
+
+                                                                                {citations?.length ? (
+                                                                                    <div className="mt-4 pt-3 border-t border-neutral-900/10 dark:border-white/10">
+                                                                                        <CitationSources
                                                                                             workspaceId={
                                                                                                 workspaceId
                                                                                             }
-                                                                                            isAnimating={
-                                                                                                isAnimatingMessage
+                                                                                            citations={
+                                                                                                citations
                                                                                             }
                                                                                         />
-                                                                                    )}
-                                                                                </BubbleContent>
-                                                                            </Bubble>
-                                                                            {!isUser &&
-                                                                            citations?.length ? (
-                                                                                <MessageFooter className="mt-1 w-full max-w-full flex-col items-start gap-0 px-0">
-                                                                                    <CitationSources
-                                                                                        workspaceId={
-                                                                                            workspaceId
-                                                                                        }
-                                                                                        citations={
-                                                                                            citations
-                                                                                        }
-                                                                                    />
-                                                                                </MessageFooter>
-                                                                            ) : null}
-                                                                        </MessageContent>
-                                                                    </Message>
+                                                                                    </div>
+                                                                                ) : null}
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </MessageScrollerItem>
                                                             );
                                                         },
@@ -468,33 +438,25 @@ export function WorkspaceChat({
                                                             messages.length - 1
                                                         ]?.role === "user" && (
                                                             <MessageScrollerItem scrollAnchor>
-                                                                <Message align="start">
-                                                                    <MessageAvatar className="size-8 rounded-lg bg-lime-300 border-2 border-neutral-900 flex items-center justify-center text-neutral-900 font-bold shadow-sm">
+                                                                <div className="flex w-full items-start gap-3">
+                                                                    <div className="size-8 rounded-lg bg-lime-300 border border-neutral-900 dark:border-white/20 flex items-center justify-center shrink-0 mt-0.5 text-neutral-900 font-bold shadow-sm">
                                                                         <ShieldCheck className="size-4 text-neutral-900" />
-                                                                    </MessageAvatar>
-                                                                    <MessageContent>
-                                                                        <Bubble
-                                                                            align="start"
-                                                                            variant="ghost"
-                                                                            className="bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border-2 border-neutral-900 dark:border-white/20 shadow-[3px_3px_0px_0px_#121212] dark:shadow-none rounded-2xl"
-                                                                        >
-                                                                            <BubbleContent className="leading-relaxed p-4">
-                                                                                <ChatMessageBody
-                                                                                    text=""
-                                                                                    workspaceId={
-                                                                                        workspaceId
-                                                                                    }
-                                                                                    isAnimating={
-                                                                                        true
-                                                                                    }
-                                                                                />
-                                                                            </BubbleContent>
-                                                                        </Bubble>
-                                                                    </MessageContent>
-                                                                </Message>
+                                                                    </div>
+                                                                    <div className="flex-1 min-w-0 bg-white dark:bg-[#161B20] text-neutral-900 dark:text-[#FBF9F5] border border-neutral-900/10 dark:border-white/10 rounded-2xl p-4 sm:p-5 text-sm leading-relaxed shadow-sm font-sans">
+                                                                        <ChatMessageBody
+                                                                            text=""
+                                                                            workspaceId={
+                                                                                workspaceId
+                                                                            }
+                                                                            isAnimating={
+                                                                                true
+                                                                            }
+                                                                        />
+                                                                    </div>
+                                                                </div>
                                                             </MessageScrollerItem>
                                                         )}
-                                                </MessageGroup>
+                                                </div>
                                             )}
                                         </MessageScrollerContent>
                                     </MessageScrollerViewport>
