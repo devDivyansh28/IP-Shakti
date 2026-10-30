@@ -58,108 +58,109 @@ function sourceTypeLabel(type: string) {
 }
 
 export function CitationSources({
-    workspaceId,
-    citations,
+  workspaceId,
+  citations,
 }: CitationSourcesProps) {
-    const unique = uniqueCitationsBySource(citations);
+  const unique = uniqueCitationsBySource(citations);
 
-    if (unique.length === 0) {
-        return null;
-    }
+  if (unique.length === 0) {
+    return null;
+  }
 
-    return (
-        <div className="flex w-full min-w-0 flex-col gap-2">
-            <Marker variant="separator" className="text-xs">
-                <MarkerIcon aria-hidden="true">
-                    <BookOpenIcon />
-                </MarkerIcon>
-                <MarkerContent>Sources</MarkerContent>
-            </Marker>
+  return (
+    <div className="flex w-full min-w-0 flex-col gap-2">
+      <Marker variant="separator" className="text-xs">
+        <MarkerIcon aria-hidden="true">
+          <BookOpenIcon />
+        </MarkerIcon>
+        <MarkerContent>Sources</MarkerContent>
+      </Marker>
 
-            <AttachmentGroup className="px-0.5">
-                {unique.map((citation) => {
-                    const description = [
+      <AttachmentGroup className="px-0.5">
+        {unique.map((citation) => {
+          const description = [
+            citation.sourceType === "WEB"
+              ? "Web"
+              : sourceTypeLabel(citation.sourceType),
+            citation.page ? `p.${citation.page}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          const citationKey =
+            citation.sourceId ?? citation.url ?? citation.sourceTitle;
+          const isWeb = citation.sourceType === "WEB" && citation.url;
+
+          return (
+            <HoverCard key={citationKey}>
+              <HoverCardTrigger
+                delay={150}
+                closeDelay={100}
+                className="rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
+              >
+                <Attachment
+                  size="xs"
+                  className="cursor-default transition-shadow hover:shadow-sm"
+                >
+                  <AttachmentMedia variant="icon">
+                    <SourceTypeIcon
+                      type={
                         citation.sourceType === "WEB"
-                            ? "Web"
-                            : sourceTypeLabel(citation.sourceType),
-                        citation.page ? `p.${citation.page}` : null,
-                    ]
-                        .filter(Boolean)
-                        .join(" · ");
-                    const citationKey =
-                        citation.sourceId ??
-                        citation.url ??
-                        citation.sourceTitle;
-                    const isWeb = citation.sourceType === "WEB" && citation.url;
-
-                    return (
-                        <HoverCard key={citationKey}>
-                            <HoverCardTrigger
-                                delay={150}
-                                closeDelay={100}
-                                className="rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-                            >
-                                <Attachment
-                                    size="xs"
-                                    className="cursor-default transition-shadow hover:shadow-sm"
-                                >
-                                    <AttachmentMedia variant="icon">
-                                        <SourceTypeIcon
-                                            type={
-                                                citation.sourceType === "WEB"
-                                                    ? "WEBSITE"
-                                                    : citation.sourceType
-                                            }
-                                        />
-                                    </AttachmentMedia>
-                                    <AttachmentContent>
-                                        <AttachmentTitle>
-                                            {citation.sourceTitle}
-                                        </AttachmentTitle>
-                                        {description ? (
-                                            <AttachmentDescription>
-                                                {description}
-                                            </AttachmentDescription>
-                                        ) : null}
-                                    </AttachmentContent>
-                                    {isWeb ? (
-                                        <AttachmentTrigger
-                                            render={
-                                                <a
-                                                    href={citation.url}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                />
-                                            }
-                                        />
-                                    ) : citation.sourceId ? (
-                                        <AttachmentTrigger
-                                            render={
-                                                <Link
-                                                    href={sourceRoutes.detail(
-                                                        workspaceId,
-                                                        citation.sourceId,
-                                                    )}
-                                                />
-                                            }
-                                        />
-                                    ) : null}
-                                </Attachment>
-                            </HoverCardTrigger>
-                            <HoverCardContent
-                                side="top"
-                                align="start"
-                                className="w-80"
-                            >
-                                <CitationPreview
-                                    citation={citation}
-                                    workspaceId={workspaceId}
-                                />
-                            </HoverCardContent>
-                        </HoverCard>
-                    );
-                })}
-            </AttachmentGroup>
-        </div>
-    );
+                          ? "WEBSITE"
+                          : citation.sourceType
+                      }
+                    />
+                  </AttachmentMedia>
+                  <AttachmentContent>
+                    <AttachmentTitle>{citation.sourceTitle}</AttachmentTitle>
+                    {description ? (
+                      <AttachmentDescription>
+                        {description}
+                      </AttachmentDescription>
+                    ) : null}
+                  </AttachmentContent>
+                  {isWeb ? (
+                    <AttachmentTrigger
+                      render={
+                        <a
+                          href={citation.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        />
+                      }
+                    />
+                  ) : citation.sourceId ? (
+                    <AttachmentTrigger
+                      render={
+                        <Link
+                          href={sourceRoutes.detail(
+                            workspaceId,
+                            citation.sourceId,
+                          )}
+                        />
+                      }
+                    />
+                  ) : null}
+                </Attachment>
+              </HoverCardTrigger>
+              <HoverCardContent side="top" align="start" className="w-80">
+                <CitationPreview
+                  citation={citation}
+                  workspaceId={workspaceId}
+                />
+              </HoverCardContent>
+            </HoverCard>
+          );
+        })}
+      </AttachmentGroup>
+    </div>
+  );
 }
+
+
+
+
+
+
+
+
+
